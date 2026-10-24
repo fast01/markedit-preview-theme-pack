@@ -1,0 +1,683 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MarkEdit ITS Preview — Prototype</title>
+<style>
+  :root {
+    color-scheme: light;
+    --its-bg: #eef0f3;
+    --its-paper: #fafbff;
+    --its-border: #d8dde4;
+    --its-text: #6f7780;
+    --its-muted: #8a929b;
+    --its-heading: #8a282c;
+    --its-accent: #8a282c;
+    --its-link: #6f9bcf;
+    --its-rule: #c9d8ee;
+    --its-guide: #7e2425;
+    --its-collapse: #aeb4cf;
+    --its-collapse-hover: #8a282c;
+    --its-active: #9db0cd;
+    --its-code-bg: #f1f3f6;
+    --its-hr-line: #d7dde5;
+    --its-heading-font: "Palatino", "Iowan Old Style", "Book Antiqua", Georgia, serif;
+    --its-body-font: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    --its-code-font: "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+    --its-list-indent: 3.2em;
+    --its-nested-indent: 4.6em;
+    --its-rail-offset: 1.1em;
+    --its-rail-width: 3px;
+    --its-bullet-offset: 2.15em;
+    --its-triangle-offset: 1.1em;
+    --its-bullet-size: 0.62em;
+    --its-h1-size: 34px;
+    --its-h2-size: 30px;
+    --its-h3-size: 26px;
+    --its-h4-size: 22px;
+    --its-h5-size: 20px;
+    --its-h6-size: 18px;
+  }
+
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --its-bg: #101216;
+    --its-paper: #171a1f;
+    --its-border: #2b313a;
+    --its-text: #c8ced8;
+    --its-muted: #8e99a8;
+    --its-heading: #e07a7a;
+    --its-accent: #d05a5a;
+    --its-link: #7aa7d6;
+    --its-rule: #3a4b66;
+    --its-guide: #d05a5a;
+    --its-collapse: #8090a8;
+    --its-collapse-hover: #e07a7a;
+    --its-active: #8fa8c8;
+    --its-code-bg: #22272e;
+    --its-hr-line: #2c333d;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+
+  body {
+    background: var(--its-bg);
+    color: var(--its-text);
+    font-family: var(--its-body-font);
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+    transition: background 0.2s ease, color 0.2s ease;
+  }
+
+  .proto-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 10px 14px;
+    width: fit-content;
+    max-width: calc(100vw - 32px);
+    margin: 20px auto 0;
+    padding: 8px 14px;
+    border: 1px solid var(--its-border);
+    border-radius: 999px;
+    background: var(--its-paper);
+    color: var(--its-muted);
+    font-size: 12px;
+    box-shadow: 0 1px 2px rgba(20, 30, 50, 0.04);
+  }
+
+  .proto-title {
+    color: var(--its-text);
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+
+  .proto-bar label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+  }
+
+  .proto-bar input[type="checkbox"] {
+    accent-color: var(--its-accent);
+  }
+
+  .proto-bar button {
+    appearance: none;
+    border: 1px solid var(--its-border);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--its-text);
+    font: inherit;
+    padding: 3px 10px;
+    cursor: pointer;
+  }
+
+  .proto-bar button:hover {
+    border-color: var(--its-accent);
+    color: var(--its-accent);
+  }
+
+  .proto-bar button:focus-visible,
+  .proto-bar input:focus-visible {
+    outline: 2px solid var(--its-accent);
+    outline-offset: 2px;
+  }
+
+  .its-shell {
+    max-width: 920px;
+    margin: 28px auto 80px;
+    padding: 0 20px;
+  }
+
+  .markdown-body.its-document {
+    background: var(--its-paper);
+    border: 1px solid var(--its-border);
+    border-radius: 9px;
+    padding: 34px 56px 44px;
+    box-shadow: 0 1px 2px rgba(20, 30, 50, 0.04);
+    font-size: 16px;
+    line-height: 1.7;
+  }
+
+  .markdown-body p {
+    margin: 0.55em 0 0.9em;
+  }
+
+  .markdown-body a {
+    color: var(--its-link);
+    text-decoration: none;
+  }
+
+  .markdown-body a:hover {
+    text-decoration: underline;
+    text-underline-offset: 0.15em;
+  }
+
+  .markdown-body :is(h1, h2, h3, h4, h5, h6) {
+    position: relative;
+    margin: 0;
+    padding: 0;
+    font-family: var(--its-heading-font);
+    font-weight: 700;
+    line-height: 1.18;
+    letter-spacing: 0.005em;
+    color: var(--its-heading);
+  }
+
+  .markdown-body h1 { font-size: clamp(28px, 4vw, var(--its-h1-size)); margin-top: 0.15em; margin-bottom: 0.55em; }
+  .markdown-body h2 { font-size: clamp(24px, 3.2vw, var(--its-h2-size)); margin-top: 2.1em; margin-bottom: 0.55em; }
+  .markdown-body h3 { font-size: clamp(21px, 2.7vw, var(--its-h3-size)); margin-top: 1.65em; margin-bottom: 0.45em; }
+  .markdown-body h4 { font-size: var(--its-h4-size); margin-top: 1.5em; margin-bottom: 0.4em; }
+  .markdown-body h5 { font-size: var(--its-h5-size); margin-top: 1.35em; margin-bottom: 0.35em; }
+  .markdown-body h6 { font-size: var(--its-h6-size); margin-top: 1.25em; margin-bottom: 0.3em; }
+
+  .markdown-body :is(h1, h2, h3, h4, h5, h6)::after {
+    content: "";
+    display: block;
+    width: 100%;
+    height: 4px;
+    margin-top: 0.16em;
+    border-radius: 1px;
+    background: var(--its-rule);
+  }
+
+  .markdown-body :is(h1, h2, h3, h4, h5, h6) > .its-heading-fold {
+    position: absolute;
+    left: -28px;
+    top: calc(0.59em - 8px);
+    font-size: inherit;
+  }
+
+  .markdown-body ul,
+  .markdown-body ol {
+    position: relative;
+    margin: 0.55em 0 0.9em;
+    padding-left: var(--its-list-indent);
+  }
+
+  .markdown-body ul {
+    --its-current-indent: var(--its-list-indent);
+    list-style: none;
+  }
+
+  .markdown-body :is(ul, ol) :is(ul, ol) {
+    margin: 0.18em 0 0.25em;
+  }
+
+  .markdown-body :is(ul, ol) ul {
+    --its-current-indent: var(--its-nested-indent);
+    padding-left: var(--its-nested-indent);
+  }
+
+  .markdown-body ul::before {
+    content: "";
+    position: absolute;
+    left: calc(var(--its-current-indent) - var(--its-rail-offset) - var(--its-rail-width) / 2);
+    top: 0.15em;
+    bottom: 0.15em;
+    width: var(--its-rail-width);
+    border-radius: 1px;
+    background: var(--its-guide);
+  }
+
+  .markdown-body li {
+    position: relative;
+    margin: 0.12em 0;
+    padding-left: 0;
+  }
+
+  .markdown-body ul > li::before {
+    content: "";
+    position: absolute;
+    z-index: 1;
+    left: calc(-1 * var(--its-bullet-offset) - var(--its-bullet-size) / 2);
+    top: calc(0.85em - var(--its-bullet-size) / 2);
+    width: var(--its-bullet-size);
+    height: var(--its-bullet-size);
+    border-radius: 1px;
+    background: var(--its-accent);
+    transform: rotate(45deg);
+    transform-origin: center;
+  }
+
+  .markdown-body li > .its-list-fold {
+    position: absolute;
+    left: calc(-1 * (var(--its-bullet-offset) + var(--its-triangle-offset)) - 8px);
+    top: calc(0.85em - 8px);
+    font-size: inherit;
+  }
+
+  .markdown-body :is(ul, ol) ul::before {
+    display: none;
+  }
+
+  .markdown-body ul.its-nested-list > li::before {
+    top: 50%;
+    transform: translateY(-50%) rotate(45deg);
+  }
+
+  .markdown-body ul.its-nested-list > li::after {
+    content: "";
+    position: absolute;
+    left: calc(-1 * var(--its-rail-offset) - var(--its-rail-width) / 2);
+    top: 0;
+    bottom: 0;
+    width: var(--its-rail-width);
+    border-radius: 1px;
+    background: var(--its-guide);
+    pointer-events: none;
+  }
+
+  .markdown-body ul.its-nested-list > li > .its-list-fold {
+    top: 50%;
+    transform: translateY(-50%);
+  }
+
+  .markdown-body ul:not(.its-nested-list) > li:hover:not(:has(li:hover))::after,
+  .markdown-body ul:not(.its-nested-list) > li.is-active::after {
+    content: "";
+    position: absolute;
+    left: calc(-1 * var(--its-rail-offset) - var(--its-rail-width) / 2);
+    top: 0.08em;
+    width: var(--its-rail-width);
+    height: 1.55em;
+    border-radius: 1px;
+    background: var(--its-active);
+    pointer-events: none;
+  }
+
+  .markdown-body ul.its-nested-list > li:hover:not(:has(li:hover))::after,
+  .markdown-body ul.its-nested-list > li.is-active::after {
+    background: var(--its-active);
+  }
+
+  .markdown-body ul > li:hover:not(:has(li:hover))::before,
+  .markdown-body ul > li.is-active::before {
+    background: var(--its-active);
+  }
+
+  .markdown-body li:hover:not(:has(li:hover)) > .its-list-fold,
+  .markdown-body li.is-active > .its-list-fold {
+    color: var(--its-active);
+  }
+
+  .markdown-body li.is-collapsed > ul,
+  .markdown-body li.is-collapsed > ol,
+  .markdown-body li.is-collapsed > p:not(:first-of-type),
+  .markdown-body li.is-collapsed > blockquote,
+  .markdown-body li.is-collapsed > pre,
+  .markdown-body li.is-collapsed > table {
+    display: none;
+  }
+
+  .its-fold {
+    position: absolute;
+    z-index: 2;
+    display: grid;
+    place-items: center;
+    width: 16px;
+    height: 16px;
+    padding: 0;
+    border: 0;
+    border-radius: 3px;
+    background: transparent;
+    color: var(--its-collapse);
+    font-size: 16px;
+    line-height: 1;
+    cursor: pointer;
+    transition: color 0.15s ease, background 0.15s ease;
+  }
+
+  .its-fold::before {
+    content: "";
+    width: 0;
+    height: 0;
+    border-left: 8px solid currentColor;
+    border-top: 6px solid transparent;
+    border-bottom: 6px solid transparent;
+    transform-origin: 35% 50%;
+    transition: transform 0.15s ease;
+  }
+
+  .its-fold[aria-expanded="true"]::before {
+    transform: rotate(90deg);
+  }
+
+  .its-fold:hover {
+    color: var(--its-collapse-hover);
+    background: color-mix(in srgb, var(--its-accent) 10%, transparent);
+  }
+
+  .its-fold:focus-visible {
+    outline: 2px solid var(--its-collapse-hover);
+    outline-offset: 1px;
+  }
+
+  .its-fold:disabled {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .markdown-body hr {
+    position: relative;
+    height: 20px;
+    margin: 2.3em 0;
+    border: 0;
+    background: linear-gradient(var(--its-hr-line), var(--its-hr-line)) center / 100% 1px no-repeat;
+  }
+
+  .markdown-body hr::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 22px;
+    height: 22px;
+    transform: translate(-50%, -50%);
+    background: var(--its-accent);
+    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M13 2 4 14h6l-1 8 10-12h-6l1-8z'/%3E%3C/svg%3E") center / 20px 20px no-repeat;
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M13 2 4 14h6l-1 8 10-12h-6l1-8z'/%3E%3C/svg%3E") center / 20px 20px no-repeat;
+  }
+
+  .markdown-body code {
+    padding: 0.12em 0.32em;
+    border-radius: 4px;
+    background: var(--its-code-bg);
+    font-family: var(--its-code-font);
+    font-size: 0.88em;
+  }
+
+  .markdown-body pre {
+    margin: 0.9em 0 1.1em;
+    padding: 14px 16px;
+    border-radius: 6px;
+    background: var(--its-code-bg);
+    overflow: auto;
+  }
+
+  .markdown-body pre code {
+    padding: 0;
+    background: none;
+    font-size: 0.86em;
+  }
+
+  .markdown-body blockquote {
+    margin: 1em 0;
+    padding: 0.1em 0 0.1em 1em;
+    border-left: 3px solid var(--its-rule);
+    color: var(--its-muted);
+  }
+
+  .its-note {
+    margin-top: 1.4em;
+    color: var(--its-muted);
+    font-size: 12px;
+  }
+
+  @media (max-width: 640px) {
+    .markdown-body.its-document {
+      padding: 24px 30px 30px;
+    }
+
+    .markdown-body {
+      --its-list-indent: 2.8em;
+      --its-nested-indent: 4em;
+      --its-rail-offset: 1em;
+      --its-rail-width: 2px;
+      --its-bullet-offset: 1.9em;
+      --its-triangle-offset: 1em;
+      --its-bullet-size: 0.6em;
+    }
+
+    .markdown-body :is(h1, h2, h3, h4, h5, h6) > .its-heading-fold {
+      left: -20px;
+    }
+  }
+</style>
+</head>
+<body>
+
+<div class="proto-bar" role="group" aria-label="Prototype controls">
+  <span class="proto-title">ITS preview prototype</span>
+  <label><input type="checkbox" id="auto-fold" checked> Auto-fold H3</label>
+  <button type="button" id="expand-all">Expand all</button>
+  <button type="button" id="collapse-all">Collapse all</button>
+  <button type="button" id="theme-toggle">Dark</button>
+</div>
+
+<main class="its-shell">
+  <article class="markdown-body its-document" id="preview">
+    <h1 id="explore-the-universe">Explore The Universe</h1>
+    <p>This is a compact visual prototype for the MarkEdit preview. The list below mirrors the reference: diamond bullets, a red outline guide, and fold controls. The <code>H3</code> sections lower on the page start collapsed.</p>
+
+    <ul>
+      <li><a href="#stories">Stories</a>
+        <ul>
+          <li>The stories written in this universe</li>
+        </ul>
+      </li>
+      <li><a href="#characters">Characters</a>
+        <ul>
+          <li>The base version of characters in this universe</li>
+        </ul>
+      </li>
+      <li><a href="#universe">Universe</a>
+        <ul>
+          <li>The basic version of locations in this universe</li>
+        </ul>
+      </li>
+    </ul>
+
+    <hr>
+
+    <h2 id="stories">Stories</h2>
+    <p>Stories are the main narrative surface of the universe. This paragraph belongs to the H2 section and stays visible when the H3 sections are folded.</p>
+    <h3 id="stories-written">The stories written in this universe</h3>
+    <p>Every story in this universe starts from a single question, then follows the consequences until they become a place, a person, or a rumor.</p>
+    <ul>
+      <li>Short stories
+        <ul>
+          <li>A first contact story</li>
+          <li>A quiet story about a mapmaker</li>
+        </ul>
+      </li>
+      <li>Novels</li>
+    </ul>
+
+    <h2 id="characters">Characters</h2>
+    <p>Characters are the people who make the universe legible. The base version stays deliberately small so that every new character has room to grow.</p>
+    <h3 id="characters-base">The base version of characters in this universe</h3>
+    <p>Each character has a public role, a private motive, and one detail that does not fit either. That third detail is usually where the story begins.</p>
+
+    <h2 id="universe">Universe</h2>
+    <p>The universe is the set of locations, rules, and habits that make the stories feel like they share a home.</p>
+    <h3 id="universe-locations">The basic version of locations in this universe</h3>
+    <p>Locations are written as a small set of stable places, with enough friction between them to generate travel, trade, and misunderstanding.</p>
+    <pre><code>const universe = {
+  stories: true,
+  characters: true,
+  locations: true,
+};</code></pre>
+
+    <hr>
+    <p class="its-note">Prototype only. The toolbar above is not part of the theme; it exists to test auto-fold and dark mode.</p>
+  </article>
+</main>
+
+<script>
+  const doc = document.getElementById('preview');
+  const autoFold = document.getElementById('auto-fold');
+  const themeToggle = document.getElementById('theme-toggle');
+  const headings = [...doc.querySelectorAll(':scope > h1, :scope > h2, :scope > h3, :scope > h4, :scope > h5, :scope > h6')];
+  const sectionMap = new Map();
+  const level = (heading) => Number(heading.tagName.slice(1));
+  const params = new URLSearchParams(location.search);
+
+  if (params.get('theme') === 'dark') {
+    document.documentElement.dataset.theme = 'dark';
+    themeToggle.textContent = 'Light';
+  }
+
+  if (params.get('autofold') === '0') {
+    autoFold.checked = false;
+  }
+
+  const activeTop = params.get('activeTop');
+  if (activeTop !== null) {
+    const activeItem = doc.querySelector(':scope > ul > li:nth-child(' + Number(activeTop) + ')');
+    if (activeItem !== null) {
+      activeItem.classList.add('is-active');
+    }
+  }
+
+  function makeFoldButton(kind) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'its-fold its-' + kind + '-fold';
+    button.setAttribute('aria-expanded', 'true');
+    button.setAttribute('aria-label', kind === 'heading' ? 'Collapse section' : 'Collapse list');
+    return button;
+  }
+
+  function setupHeadings() {
+    // Walk backwards so moving nodes into wrappers never invalidates earlier headings.
+    for (let index = headings.length - 1; index >= 0; index -= 1) {
+      const heading = headings[index];
+      const headingLevel = level(heading);
+      const content = [];
+
+      let node = heading.nextElementSibling;
+      while (node !== null) {
+        if (node.matches('h1, h2, h3, h4, h5, h6') && level(node) <= headingLevel) {
+          break;
+        }
+        content.push(node);
+        node = node.nextElementSibling;
+      }
+
+      const button = makeFoldButton('heading');
+      heading.prepend(button);
+
+      if (content.length === 0) {
+        button.disabled = true;
+        button.setAttribute('aria-label', 'No content to fold');
+        continue;
+      }
+
+      const wrapper = document.createElement('div');
+      wrapper.className = 'its-section-content';
+      wrapper.id = 'its-section-' + index;
+      heading.after(wrapper);
+      content.forEach((element) => wrapper.appendChild(element));
+
+      sectionMap.set(heading, wrapper);
+      button.dataset.section = wrapper.id;
+      button.setAttribute('aria-controls', wrapper.id);
+    }
+  }
+
+  function setupLists() {
+    doc.querySelectorAll('li').forEach((item, index) => {
+      const nested = item.querySelector(':scope > ul, :scope > ol');
+      if (nested === null) {
+        return;
+      }
+
+      nested.id = 'its-list-' + index;
+      nested.classList.add('its-nested-list');
+      const button = makeFoldButton('list');
+      button.setAttribute('aria-controls', nested.id);
+      item.prepend(button);
+    });
+  }
+
+  function setHeadingCollapsed(heading, collapsed) {
+    const wrapper = sectionMap.get(heading);
+    if (wrapper === undefined) {
+      return;
+    }
+
+    const button = heading.querySelector(':scope > .its-heading-fold');
+    wrapper.hidden = collapsed;
+    if (button !== null) {
+      button.setAttribute('aria-expanded', String(!collapsed));
+      button.setAttribute('aria-label', collapsed ? 'Expand section' : 'Collapse section');
+    }
+  }
+
+  function setListCollapsed(button, collapsed) {
+    const item = button.closest('li');
+    if (item === null) {
+      return;
+    }
+
+    item.classList.toggle('is-collapsed', collapsed);
+    button.setAttribute('aria-expanded', String(!collapsed));
+    button.setAttribute('aria-label', collapsed ? 'Expand list' : 'Collapse list');
+  }
+
+  function applyAutoFold() {
+    if (!autoFold.checked) {
+      return;
+    }
+
+    headings.forEach((heading) => {
+      if (level(heading) >= 3 && sectionMap.has(heading)) {
+        setHeadingCollapsed(heading, true);
+      }
+    });
+  }
+
+  setupHeadings();
+  setupLists();
+  applyAutoFold();
+
+  doc.addEventListener('click', (event) => {
+    const button = event.target.closest('.its-fold');
+    if (button === null || button.disabled) {
+      return;
+    }
+
+    if (button.classList.contains('its-heading-fold')) {
+      const heading = button.closest('h1, h2, h3, h4, h5, h6');
+      const wrapper = sectionMap.get(heading);
+      if (wrapper !== undefined) {
+        setHeadingCollapsed(heading, !wrapper.hidden);
+      }
+    } else {
+      setListCollapsed(button, !button.closest('li').classList.contains('is-collapsed'));
+    }
+  });
+
+  autoFold.addEventListener('change', () => {
+    headings.forEach((heading) => {
+      if (level(heading) >= 3 && sectionMap.has(heading)) {
+        setHeadingCollapsed(heading, autoFold.checked);
+      }
+    });
+  });
+
+  document.getElementById('expand-all').addEventListener('click', () => {
+    headings.forEach((heading) => setHeadingCollapsed(heading, false));
+    doc.querySelectorAll('.its-list-fold').forEach((button) => setListCollapsed(button, false));
+  });
+
+  document.getElementById('collapse-all').addEventListener('click', () => {
+    headings.forEach((heading) => setHeadingCollapsed(heading, true));
+    doc.querySelectorAll('.its-list-fold').forEach((button) => setListCollapsed(button, true));
+  });
+
+  themeToggle.addEventListener('click', () => {
+    const root = document.documentElement;
+    const dark = root.dataset.theme !== 'dark';
+    root.dataset.theme = dark ? 'dark' : 'light';
+    themeToggle.textContent = dark ? 'Light' : 'Dark';
+  });
+</script>
+</body>
+</html>

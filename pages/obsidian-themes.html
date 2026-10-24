@@ -1,0 +1,1437 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Obsidian Theme Previews — ITS / Maple / Obsidianite</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: #e8ecf1;
+    color: #333;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  }
+
+  .toolbar {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 16px;
+    padding: 10px 18px;
+    border-bottom: 1px solid #d5dbe3;
+    background: rgba(255, 255, 255, 0.94);
+    backdrop-filter: blur(10px);
+    font-size: 12px;
+  }
+
+  .toolbar strong {
+    font-size: 13px;
+    letter-spacing: 0.01em;
+  }
+
+  .toolbar .hint {
+    color: #7c8794;
+  }
+
+  .theme-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .theme-buttons button {
+    appearance: none;
+    padding: 5px 11px;
+    border: 1px solid #c9d1db;
+    border-radius: 999px;
+    background: #fff;
+    color: #45515e;
+    font: inherit;
+    cursor: pointer;
+  }
+
+  .theme-buttons button:hover {
+    border-color: #8c9aab;
+  }
+
+  .theme-buttons button.active {
+    border-color: #3a6f9e;
+    background: #3a6f9e;
+    color: #fff;
+  }
+
+  .stage {
+    max-width: 1020px;
+    margin: 26px auto 90px;
+    padding: 0 18px;
+  }
+
+  .theme-shell {
+    padding: 46px 54px 56px;
+    border-radius: 12px;
+    box-shadow: 0 10px 34px rgba(20, 30, 50, 0.10);
+    font-size: 16px;
+    line-height: 1.7;
+  }
+
+  .theme-shell p { margin: 0.6em 0 0.95em; }
+  .theme-shell ul { margin: 0.5em 0 0.9em; }
+  .theme-shell a { text-decoration: none; }
+  .theme-shell a:hover { text-decoration: underline; text-underline-offset: 0.15em; }
+  .theme-shell strong { font-weight: 700; }
+  .theme-shell code {
+    border-radius: 4px;
+    font-family: "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+    font-size: 0.86em;
+  }
+  .theme-shell pre {
+    overflow: auto;
+    padding: 14px 16px;
+    border-radius: 8px;
+  }
+  .theme-shell pre code { padding: 0; background: none; }
+  .theme-shell blockquote { margin: 1.1em 0; }
+  .theme-shell hr { border: 0; }
+
+  .theme-shell :is(h1, h2, h3, h4, h5, h6) {
+    position: relative;
+    margin: 0;
+  }
+
+  /* ---------------- Maple ---------------- */
+  [data-theme="maple-light"] {
+    --mp-bg: #fbf8f3;
+    --mp-text: #3b3a36;
+    --mp-heading: #2f2e2a;
+    --mp-muted: #8a877e;
+    --mp-accent: #5d9e6b;
+    --mp-accent-soft: #a9c7b1;
+    --mp-link: #4f8f63;
+    --mp-line: #e6ded2;
+    --mp-code: #f0ebe2;
+    --mp-check-border: #a9c7b1;
+    --mp-check-fill: #5d9e6b;
+    --mp-guide: rgba(60, 60, 50, 0.14);
+    --mp-hover: rgba(93, 158, 107, 0.1);
+    --mp-thread: rgba(93, 158, 107, 0.68);
+    --mp-h1: #a54b4b;
+    --mp-h2: #b86b2b;
+    --mp-h3: #5d9e6b;
+    --mp-h4: #4e7fb0;
+    --mp-h5: #7e6aa8;
+    --mp-h6: #4a9a9a;
+    background: var(--mp-bg);
+    color: var(--mp-text);
+    font-size: 16px;
+    line-height: 1.8;
+  }
+
+  [data-theme="maple-dark"] {
+    --mp-bg: #0d0f11;
+    --mp-text: #c3d0dc;
+    --mp-heading: #d8e2ec;
+    --mp-muted: #7f8d9b;
+    --mp-accent: #6f93b3;
+    --mp-accent-soft: #3e5366;
+    --mp-link: #8ab4d8;
+    --mp-line: #202830;
+    --mp-code: #14181c;
+    --mp-check-border: #3e5366;
+    --mp-check-fill: #6f93b3;
+    --mp-guide: rgba(230, 240, 250, 0.12);
+    --mp-hover: rgba(111, 147, 179, 0.13);
+    --mp-thread: rgba(111, 147, 179, 0.68);
+    --mp-h1: #d98b8b;
+    --mp-h2: #d6a06a;
+    --mp-h3: #8fc29b;
+    --mp-h4: #8ab4d8;
+    --mp-h5: #b3a0d6;
+    --mp-h6: #7fc7c7;
+    background: var(--mp-bg);
+    color: var(--mp-text);
+    font-size: 16px;
+    line-height: 1.8;
+    box-shadow: 0 10px 34px rgba(0, 0, 0, 0.24);
+  }
+
+  [data-theme^="maple"] a { color: var(--mp-link); }
+  [data-theme^="maple"] code { background: var(--mp-code); color: var(--mp-text); padding: 0.12em 0.34em; }
+  [data-theme^="maple"] pre { background: var(--mp-code); }
+
+  [data-theme^="maple"] :is(h1, h2, h3, h4, h5, h6) {
+    font-family: inherit;
+    line-height: 1.35;
+  }
+  [data-theme^="maple"] h1 { color: var(--mp-h1); font-size: 1.6em; font-weight: 750; margin: 0 0 0.55em; }
+  [data-theme^="maple"] h2 { color: var(--mp-h2); font-size: 1.5em; font-weight: 700; margin: 1.35em 0 0.7em; }
+  [data-theme^="maple"] h3 { color: var(--mp-h3); font-size: 1.4em; font-weight: 600; margin: 1.2em 0 0.4em; }
+  [data-theme^="maple"] h4 { color: var(--mp-h4); font-size: 1.3em; font-weight: 550; }
+  [data-theme^="maple"] h5 { color: var(--mp-h5); font-size: 1.2em; font-weight: 550; }
+  [data-theme^="maple"] h6 { color: var(--mp-h6); font-size: 1.1em; font-weight: 500; }
+
+  [data-theme^="maple"] h2::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -0.32em;
+    height: 1px;
+    background: linear-gradient(to right, currentColor, transparent 84%);
+    opacity: 0.55;
+    pointer-events: none;
+  }
+
+  [data-theme^="maple"] blockquote {
+    padding: 0.15em 0 0.15em 1em;
+    border-left: 3px solid var(--mp-accent-soft);
+    color: var(--mp-muted);
+  }
+  [data-theme^="maple"] hr {
+    position: relative;
+    height: 20px;
+    margin: 2.6em 0;
+    background:
+      linear-gradient(to right, transparent, var(--mp-accent-soft) 16%, var(--mp-accent-soft) 42%, transparent 42%, transparent 58%, var(--mp-accent-soft) 58%, var(--mp-accent-soft) 84%, transparent)
+      center / 100% 1px no-repeat;
+  }
+  [data-theme^="maple"] hr::after {
+    content: "⭐";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    padding: 0 0.4em;
+    transform: translate(-50%, -50%);
+    background: var(--mp-bg);
+    font-size: 0.92em;
+    line-height: 1;
+  }
+
+  [data-theme^="maple"] ul {
+    position: relative;
+    list-style: none;
+    padding-left: 1.4em;
+  }
+  [data-theme^="maple"] li {
+    position: relative;
+    margin: 0.15em 0;
+    padding-left: 0;
+  }
+  [data-theme^="maple"] li:not(.task-list-item)::before {
+    content: "";
+    position: absolute;
+    left: -1em;
+    top: 0.6em;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--mp-accent);
+  }
+
+  /* Maple thread-style tree: active branch only, with leaf and parent prefixes. */
+  [data-theme^="maple"] li > ul::before {
+    content: "";
+    position: absolute;
+    left: calc(-0.75em - 0.5px);
+    top: -1.4em;
+    bottom: 0.1em;
+    width: 1px;
+    border-radius: 1px;
+    background: var(--mp-guide);
+    pointer-events: none;
+  }
+  [data-theme^="maple"] ul ul > li.is-branch::after {
+    content: "";
+    position: absolute;
+    left: calc(-2.15em - 1px);
+    top: calc(0.85em - 0.7em);
+    width: calc(1.15em + 1px);
+    height: 0.7em;
+    border-left: 2px solid var(--mp-thread);
+    border-bottom: 1px solid var(--mp-thread);
+    border-bottom-left-radius: 0.45em;
+    pointer-events: none;
+  }
+  [data-theme^="maple"] li.task-list-item > ul::before {
+    left: calc(-0.7em - 0.5px);
+  }
+  [data-theme^="maple"] li.task-list-item > ul > li.is-branch::after {
+    left: calc(-2.1em - 1px);
+  }
+  [data-theme^="maple"] li.is-hovered {
+    background-image: linear-gradient(var(--mp-hover), var(--mp-hover));
+    background-size: 100% 1.8em;
+    background-repeat: no-repeat;
+    border-radius: 4px;
+  }
+
+  [data-theme^="maple"] .task-list-item .task-list-item-checkbox {
+    position: absolute;
+    z-index: 2;
+    left: -1.2em;
+    top: 7.5px;
+    appearance: none;
+    -webkit-appearance: none;
+    width: 1em;
+    height: 1em;
+    margin: 0;
+    border: 2px solid var(--mp-check-border);
+    border-radius: 3px;
+    background: transparent;
+    cursor: pointer;
+  }
+  [data-theme^="maple"] .task-list-item .task-list-item-checkbox:checked {
+    border-color: var(--mp-check-fill);
+    background: var(--mp-check-fill)
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3.2 8.4 6.4 11.6 12.8 4.8' fill='none' stroke='%23fff' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")
+      center / 0.72em 0.72em no-repeat;
+  }
+  [data-theme^="maple"] .task-list-item > label { position: static; }
+  [data-theme^="maple"] li.task-list-item:has(> label > input:checked) > label {
+    color: var(--mp-muted);
+    text-decoration: line-through;
+  }
+
+  [data-theme^="maple"] .fold {
+    position: absolute;
+    z-index: 3;
+    left: -1.95em;
+    top: 0.58em;
+    display: grid;
+    place-items: center;
+    width: 14px;
+    height: 14px;
+    padding: 0;
+    border: 0;
+    border-radius: 3px;
+    background: transparent;
+    color: var(--mp-muted);
+    cursor: pointer;
+  }
+  [data-theme^="maple"] .fold::before {
+    content: "";
+    width: 0;
+    height: 0;
+    border-left: 6px solid currentColor;
+    border-top: 4.5px solid transparent;
+    border-bottom: 4.5px solid transparent;
+    transform-origin: 35% 50%;
+  }
+  [data-theme^="maple"] .fold[aria-expanded="true"]::before { transform: rotate(90deg); }
+  [data-theme^="maple"] .fold:hover { color: var(--mp-accent); }
+  [data-theme^="maple"] li.is-collapsed > ul { display: none; }
+
+  /* ---------------- Obsidianite ---------------- */
+  [data-theme^="obsidianite"] {
+    --ob-bg: #100e17;
+    --ob-panel: #191621;
+    --ob-text: #bebebe;
+    --ob-heading: #cbdbe5;
+    --ob-accent: #0fb6d6;
+    --ob-sub: #f4569d;
+    --ob-link: #6bcafb;
+    --ob-muted: #7e8794;
+    --ob-line: rgba(107, 202, 251, 0.24);
+    --ob-thread: rgba(14, 210, 247, 0.26);
+    --ob-code: #191621;
+    background: var(--ob-bg);
+    color: var(--ob-text);
+    font-family: "Rubik", -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    font-size: 18px;
+    line-height: 1.7;
+    font-weight: 450;
+    box-shadow: 0 10px 34px rgba(0, 0, 0, 0.34);
+  }
+
+  [data-theme^="obsidianite"] a { color: var(--ob-link); }
+  [data-theme^="obsidianite"] code {
+    background: var(--ob-code);
+    color: var(--ob-accent);
+    padding: 0.12em 0.36em;
+    border-radius: 4px;
+  }
+  [data-theme^="obsidianite"] pre {
+    background: var(--ob-code);
+    border: 1px solid rgba(14, 210, 247, 0.12);
+  }
+
+  [data-theme^="obsidianite"] h1 {
+    color: var(--ob-accent);
+    font-size: 34px;
+    font-weight: 650;
+    margin: 0 0 0.45em;
+  }
+  [data-theme^="obsidianite"] :is(h2, h3, h4, h5, h6) {
+    color: var(--ob-heading);
+    font-weight: 600;
+    margin: 42px 0 18px;
+    padding-bottom: 10px;
+  }
+  [data-theme^="obsidianite"] :is(h2, h3, h4, h5, h6)::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 1px;
+    background: linear-gradient(to right, var(--ob-sub), rgba(16, 14, 23, 0.15) 45%, rgba(16, 14, 23, 0));
+  }
+  [data-theme^="obsidianite"] h2 { font-size: 26px; }
+  [data-theme^="obsidianite"] h3 { font-size: 22px; }
+  [data-theme^="obsidianite"] :is(h4, h5, h6) { font-size: 18px; }
+  [data-theme^="obsidianite"] strong {
+    color: #e9edf2;
+    font-weight: 700;
+  }
+
+  [data-theme^="obsidianite"] blockquote {
+    position: relative;
+    padding: 16px 22px 16px 50px;
+    border: 1px solid rgba(14, 210, 247, 0.42);
+    background: var(--ob-panel);
+    border-radius: 2px;
+    color: #d1d6df;
+  }
+  [data-theme^="obsidianite"] blockquote::before {
+    content: "//";
+    position: absolute;
+    left: 17px;
+    top: 18px;
+    color: var(--ob-accent);
+    font-weight: 700;
+    letter-spacing: 1px;
+  }
+  [data-theme^="obsidianite"] hr {
+    position: relative;
+    height: 1px;
+    margin: 3.4em 0;
+    background: linear-gradient(to right, transparent, rgba(14, 210, 247, 0.65), transparent);
+  }
+  [data-theme^="obsidianite"] hr::after {
+    content: "§";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    padding: 0 0.55em;
+    transform: translate(-50%, -50%) rotate(60deg);
+    background: var(--ob-bg);
+    color: var(--ob-sub);
+    font-size: 1.1em;
+    line-height: 1;
+  }
+
+  [data-theme^="obsidianite"] ul {
+    position: relative;
+    list-style: none;
+    padding-left: 1.7em;
+  }
+  [data-theme^="obsidianite"] li {
+    position: relative;
+    margin: 0.15em 0;
+    padding-left: 0;
+  }
+  [data-theme^="obsidianite"] li:not(.task-list-item)::before {
+    content: "";
+    position: absolute;
+    left: -1.3em;
+    top: 0.58em;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--ob-accent);
+  }
+  [data-theme^="obsidianite"] li:not(.task-list-item):has(> ul)::after {
+    content: "";
+    position: absolute;
+    left: calc(-1.3em + 2.5px);
+    top: 1.3em;
+    bottom: -0.15em;
+    width: 2px;
+    background: var(--ob-thread);
+    pointer-events: none;
+  }
+  [data-theme^="obsidianite"] li.task-list-item:has(> ul)::after {
+    content: "";
+    position: absolute;
+    left: 6px;
+    top: 1.55em;
+    bottom: -0.15em;
+    width: 2px;
+    background: var(--ob-thread);
+    pointer-events: none;
+  }
+
+  [data-theme^="obsidianite"] li.task-list-item {
+    padding-left: 1.3em;
+    min-height: 1.6em;
+  }
+  [data-theme^="obsidianite"] .task-list-item .task-list-item-checkbox {
+    position: absolute;
+    z-index: 2;
+    left: 0;
+    top: 0.52em;
+    appearance: none;
+    -webkit-appearance: none;
+    width: 14px;
+    height: 14px;
+    margin: 0;
+    border: 2px solid #9e9e9e;
+    border-radius: 3px;
+    background: transparent;
+    cursor: pointer;
+    transition: border-color 0.2s, background-color 0.2s;
+  }
+  [data-theme^="obsidianite"] .task-list-item .task-list-item-checkbox:checked {
+    border-color: var(--ob-accent);
+    background-color: var(--ob-accent);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3.2 8.4 6.4 11.6 12.8 4.8' fill='none' stroke='%23212121' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: 0.58em 0.58em;
+  }
+  [data-theme^="obsidianite"] .task-list-item > label { position: static; }
+  [data-theme^="obsidianite"] li.task-list-item:has(> label > input:checked) > label {
+    color: rgba(14, 210, 247, 0.82);
+    text-decoration: line-through;
+  }
+
+  [data-theme^="obsidianite"] .fold {
+    position: absolute;
+    z-index: 3;
+    left: -2.55em;
+    top: 0.45em;
+    display: grid;
+    place-items: center;
+    width: 16px;
+    height: 16px;
+    padding: 0;
+    border: 0;
+    border-radius: 3px;
+    background: transparent;
+    color: var(--ob-muted);
+    cursor: pointer;
+  }
+  [data-theme^="obsidianite"] .fold::before {
+    content: "";
+    width: 0;
+    height: 0;
+    border-left: 6px solid currentColor;
+    border-top: 4.5px solid transparent;
+    border-bottom: 4.5px solid transparent;
+    transform-origin: 35% 50%;
+  }
+  [data-theme^="obsidianite"] .fold[aria-expanded="true"]::before { transform: rotate(90deg); }
+  [data-theme^="obsidianite"] .fold:hover { color: var(--ob-accent); }
+  [data-theme^="obsidianite"] li.is-collapsed > ul { display: none; }
+
+  /* ---------------- Obsidianite Brackets (copy) ---------------- */
+  /* Same palette as Obsidianite. The vertical guide becomes a teal bracket
+     on the right of each marker, wrapping the item and all its children. */
+  [data-theme="obsidianite-bracket"] {
+    --ob-brace: rgba(14, 210, 247, 0.3);
+  }
+
+  [data-theme="obsidianite-bracket"] ul {
+    padding-left: 2.5em;
+  }
+  [data-theme="obsidianite-bracket"] li {
+    margin: 0.18em 0;
+  }
+
+  [data-theme="obsidianite-bracket"] li::after,
+  [data-theme="obsidianite-bracket"] li:not(.task-list-item):has(> ul)::after,
+  [data-theme="obsidianite-bracket"] li.task-list-item:has(> ul)::after {
+    content: "";
+    position: absolute;
+    left: -0.83em;
+    top: 0.12em;
+    bottom: 0.08em;
+    width: 0.42em;
+    height: auto;
+    border: 0;
+    border-left: 2px solid var(--ob-brace);
+    border-top: 2px solid var(--ob-brace);
+    border-bottom: 2px solid var(--ob-brace);
+    border-radius: 0.42em 0 0 0.42em / 0.75em 0 0 0.75em;
+    background: none;
+    pointer-events: none;
+  }
+
+  [data-theme="obsidianite-bracket"] li:not(.task-list-item)::before {
+    left: -1.95em;
+    top: 0.52em;
+    width: 9px;
+    height: 9px;
+    border: 0;
+    border-radius: 50%;
+    background: var(--ob-accent);
+  }
+  /* Level 2: hollow ring, one step smaller. */
+  [data-theme="obsidianite-bracket"] ul ul > li:not(.task-list-item)::before {
+    left: -1.9em;
+    top: 0.57em;
+    width: 7.5px;
+    height: 7.5px;
+    border: 1.5px solid var(--ob-accent);
+    background: transparent;
+  }
+  /* Level 3: filled square, smaller again. */
+  [data-theme="obsidianite-bracket"] ul ul ul > li:not(.task-list-item)::before {
+    left: -1.85em;
+    top: 0.61em;
+    width: 6px;
+    height: 6px;
+    border: 0;
+    border-radius: 1px;
+    background: var(--ob-accent);
+  }
+  /* Level 4+: a smaller filled dot. */
+  [data-theme="obsidianite-bracket"] ul ul ul ul > li:not(.task-list-item)::before {
+    left: -1.8em;
+    top: 0.64em;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+  }
+
+  [data-theme="obsidianite-bracket"] li.task-list-item {
+    padding-left: 0;
+    min-height: 1.7em;
+  }
+  [data-theme="obsidianite-bracket"] .task-list-item .task-list-item-checkbox {
+    left: -37px;
+    top: 0.52em;
+  }
+  [data-theme="obsidianite-bracket"] .fold {
+    left: -58px;
+  }
+
+  /* Fold triangles are quiet until the row is hovered/focused. */
+  .theme-shell .fold {
+    opacity: 0;
+    pointer-events: none;
+    transition: color 0.15s ease;
+  }
+  .theme-shell li:hover:not(:has(li:hover)) > .fold,
+  .theme-shell li:focus-within > .fold,
+  .theme-shell .fold:focus-visible {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  @media (hover: none) {
+    .theme-shell .fold {
+      opacity: 1;
+      pointer-events: auto;
+    }
+  }
+
+  /* Maple table + code card */
+  [data-theme^="maple"] table {
+    width: 100%;
+    margin: 1.2em 0;
+    border: 1px solid var(--mp-line);
+    border-collapse: separate;
+    border-spacing: 0;
+    border-radius: 8px;
+    overflow: hidden;
+    font-size: 0.94em;
+  }
+  [data-theme^="maple"] th {
+    padding: 10px 12px;
+    background: var(--mp-accent);
+    color: #fff;
+    font-weight: 600;
+    text-align: left;
+  }
+  [data-theme^="maple"] td {
+    padding: 10px 12px;
+    border-top: 1px solid var(--mp-line);
+    vertical-align: top;
+  }
+  [data-theme^="maple"] tr:nth-child(even) td {
+    background: color-mix(in srgb, var(--mp-line) 24%, transparent);
+  }
+
+  [data-theme^="maple"] .code-card {
+    position: relative;
+    margin: 1.3em 0;
+    padding: 34px 16px 16px;
+    border: 1px solid var(--mp-line);
+    border-radius: 8px;
+    background: var(--mp-code);
+  }
+  [data-theme^="maple"] .code-lang {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    color: #b35448;
+    font-family: "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+    font-size: 0.72em;
+    letter-spacing: 0.02em;
+  }
+  [data-theme^="maple"] .code-card pre {
+    margin: 0;
+    padding: 0;
+    background: none;
+    overflow: auto;
+  }
+  [data-theme^="maple"] .cline { display: block; white-space: pre; }
+  [data-theme^="maple"] .ln {
+    display: inline-block;
+    width: 1.7em;
+    color: var(--mp-muted);
+    opacity: 0.65;
+    user-select: none;
+  }
+  [data-theme^="maple"] .tok-keyword { color: #a44b9e; font-style: italic; }
+  [data-theme^="maple"] .tok-func { color: #3e7fae; }
+  [data-theme^="maple"] .tok-string { color: #b8752c; }
+  [data-theme^="maple"] .tok-number { color: #b8752c; }
+  [data-theme^="maple"] .tok-comment { color: var(--mp-muted); }
+  [data-theme^="maple"] .tok-builtin { color: #3e7fae; }
+  [data-theme^="maple"] .fixme {
+    display: inline-block;
+    padding: 0.05em 0.5em;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--mp-muted) 25%, transparent);
+    color: var(--mp-text);
+    font-size: 0.8em;
+    vertical-align: 0.1em;
+  }
+
+  /* Obsidianite table + code card */
+  [data-theme^="obsidianite"] table {
+    width: 100%;
+    margin: 1.2em 0;
+    border-collapse: collapse;
+    font-size: 0.92em;
+  }
+  [data-theme^="obsidianite"] th,
+  [data-theme^="obsidianite"] td {
+    padding: 9px 12px;
+    border: 1px solid rgba(14, 210, 247, 0.18);
+    text-align: left;
+    vertical-align: top;
+  }
+  [data-theme^="obsidianite"] th {
+    color: var(--ob-accent);
+    background: rgba(14, 210, 247, 0.06);
+    font-weight: 600;
+  }
+  [data-theme^="obsidianite"] .code-card {
+    position: relative;
+    margin: 1.2em 0;
+    padding: 34px 16px 16px;
+    border: 1px solid rgba(14, 210, 247, 0.12);
+    border-radius: 8px;
+    background: var(--ob-code);
+  }
+  [data-theme^="obsidianite"] .code-lang {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    color: var(--ob-accent);
+    font-family: "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+    font-size: 0.72em;
+    letter-spacing: 0.02em;
+  }
+  [data-theme^="obsidianite"] .code-card pre {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: none;
+    overflow: auto;
+  }
+  [data-theme^="obsidianite"] .cline { display: block; white-space: pre; }
+  [data-theme^="obsidianite"] .ln {
+    display: inline-block;
+    width: 1.7em;
+    color: var(--ob-muted);
+    opacity: 0.7;
+    user-select: none;
+  }
+  [data-theme^="obsidianite"] .tok-keyword { color: #f4569d; }
+  [data-theme^="obsidianite"] .tok-func { color: #6bcafb; }
+  [data-theme^="obsidianite"] .tok-string { color: #9ece6a; }
+  [data-theme^="obsidianite"] .tok-number { color: #ff9e64; }
+  [data-theme^="obsidianite"] .tok-comment { color: #7e8794; }
+  [data-theme^="obsidianite"] .tok-builtin { color: #6bcafb; }
+  [data-theme^="obsidianite"] .fixme {
+    display: inline-block;
+    padding: 0.05em 0.5em;
+    border-radius: 999px;
+    background: #2a2735;
+    color: var(--ob-heading);
+    font-size: 0.8em;
+    vertical-align: 0.1em;
+  }
+
+  @media (max-width: 680px) {
+    .theme-shell { padding: 28px 24px 36px; }
+    .toolbar .hint { display: none; }
+    [data-theme^="obsidianite"] { font-size: 17px; }
+  }
+
+/* ================= ITS (prototype sample) ================= */
+.theme-shell[data-theme="its"] {
+  --its-text: #6f7780;
+  --its-muted: #8a929b;
+  --its-heading: #8a282c;
+  --its-accent: #8a282c;
+  --its-link: #6f9bcf;
+  --its-rule: #c9d8ee;
+  --its-guide: #7e2425;
+  --its-collapse: #aeb4cf;
+  --its-collapse-hover: #8a282c;
+  --its-active: #9db0cd;
+  --its-check: #3f7fd1;
+  --its-hr-line: #d7dde5;
+  --its-heading-font: "Palatino", "Iowan Old Style", "Book Antiqua", Georgia, serif;
+  --its-list-indent: 3.2em;
+  --its-nested-indent: 4.6em;
+  --its-rail-offset: 1.1em;
+  --its-rail-width: 3px;
+  --its-bullet-offset: 2.15em;
+  --its-triangle-offset: 1.1em;
+  --its-bullet-size: 0.62em;
+  --its-h1-size: 34px;
+  --its-h2-size: 30px;
+  --its-h3-size: 26px;
+  --its-h4-size: 22px;
+  --its-h5-size: 20px;
+  --its-h6-size: 18px;
+  color: var(--its-text);
+  font-size: 16px;
+  line-height: 1.7;
+}
+
+
+
+.theme-shell[data-theme="its"] p {
+  margin: 0.55em 0 0.9em;
+}
+
+.theme-shell[data-theme="its"] a {
+  color: var(--its-link);
+  text-decoration: none;
+}
+
+.theme-shell[data-theme="its"] a:hover {
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+
+/* Headings: serif face, no text underline, one decorative rule below. */
+.theme-shell[data-theme="its"] :is(h1, h2, h3, h4, h5, h6) {
+  position: relative;
+  margin: 0;
+  padding: 0 !important;
+  border-bottom: 0 !important;
+  font-family: var(--its-heading-font);
+  font-weight: 700;
+  line-height: 1.18;
+  letter-spacing: 0.005em;
+  color: var(--its-heading);
+  text-decoration: none;
+}
+
+.theme-shell[data-theme="its"] h1 { font-size: clamp(28px, 4vw, var(--its-h1-size)); margin-top: 0.15em; margin-bottom: 0.55em; }
+.theme-shell[data-theme="its"] h2 { font-size: clamp(24px, 3.2vw, var(--its-h2-size)); margin-top: 2.1em; margin-bottom: 0.55em; }
+.theme-shell[data-theme="its"] h3 { font-size: clamp(21px, 2.7vw, var(--its-h3-size)); margin-top: 1.65em; margin-bottom: 0.45em; }
+.theme-shell[data-theme="its"] h4 { font-size: var(--its-h4-size); margin-top: 1.5em; margin-bottom: 0.4em; }
+.theme-shell[data-theme="its"] h5 { font-size: var(--its-h5-size); margin-top: 1.35em; margin-bottom: 0.35em; }
+.theme-shell[data-theme="its"] h6 { font-size: var(--its-h6-size); margin-top: 1.25em; margin-bottom: 0.3em; }
+
+.theme-shell[data-theme="its"] :is(h1, h2, h3, h4, h5, h6)::after {
+  content: "";
+  display: block;
+  width: 100%;
+  height: 4px;
+  margin-top: 0.16em;
+  border-radius: 1px;
+  background: var(--its-rule);
+}
+
+.theme-shell[data-theme="its"] :is(h1, h2, h3, h4, h5, h6) > .its-heading-fold {
+  position: absolute;
+  left: -22px;
+  top: calc(0.59em - 8px);
+  font-size: inherit;
+}
+
+/* Lists: one continuous rail for the first level, one short rail per nested item. */
+.theme-shell[data-theme="its"] ul {
+  position: relative;
+  margin: 0.55em 0 0.9em;
+  padding-left: var(--its-list-indent);
+  list-style: none;
+  --its-current-indent: var(--its-list-indent);
+}
+
+.theme-shell[data-theme="its"] ul ul {
+  margin: 0.18em 0 0.25em;
+  padding-left: var(--its-nested-indent);
+  --its-current-indent: var(--its-nested-indent);
+}
+
+.theme-shell[data-theme="its"] ul::before {
+  content: "";
+  position: absolute;
+  left: calc(var(--its-current-indent) - var(--its-rail-offset) - var(--its-rail-width) / 2);
+  top: 0.15em;
+  bottom: 0.15em;
+  width: var(--its-rail-width);
+  border-radius: 1px;
+  background: var(--its-guide);
+}
+
+.theme-shell[data-theme="its"] ul.its-nested-list::before {
+  display: none;
+}
+
+.theme-shell[data-theme="its"] li {
+  position: relative;
+  margin: 0.12em 0;
+  padding-left: 0;
+}
+
+.theme-shell[data-theme="its"] ul > li:not(.task-list-item)::before {
+  content: "";
+  position: absolute;
+  z-index: 1;
+  left: calc(-1 * var(--its-bullet-offset) - var(--its-bullet-size) / 2);
+  top: calc(0.85em - var(--its-bullet-size) / 2);
+  width: var(--its-bullet-size);
+  height: var(--its-bullet-size);
+  border-radius: 1px;
+  background: var(--its-accent);
+  transform: rotate(45deg);
+  transform-origin: center;
+}
+
+.theme-shell[data-theme="its"] ul.its-nested-list > li:not(.task-list-item)::before {
+  top: 50%;
+  transform: translateY(-50%) rotate(45deg);
+}
+
+.theme-shell[data-theme="its"] ul.its-nested-list > li::after {
+  content: "";
+  position: absolute;
+  left: calc(-1 * var(--its-rail-offset) - var(--its-rail-width) / 2);
+  top: 0;
+  bottom: 0;
+  width: var(--its-rail-width);
+  border-radius: 1px;
+  background: var(--its-guide);
+  pointer-events: none;
+}
+
+.theme-shell[data-theme="its"] .its-fold {
+  position: absolute;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: 0;
+  border-radius: 3px;
+  background: transparent;
+  color: var(--its-collapse);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+
+.theme-shell[data-theme="its"] .its-fold::before {
+  content: "";
+  width: 0;
+  height: 0;
+  border-left: 8px solid currentColor;
+  border-top: 6px solid transparent;
+  border-bottom: 6px solid transparent;
+  transform-origin: 35% 50%;
+  transition: transform 0.15s ease;
+}
+
+.theme-shell[data-theme="its"] .its-fold[aria-expanded="true"]::before {
+  transform: rotate(90deg);
+}
+
+.theme-shell[data-theme="its"] .its-fold:hover {
+  color: var(--its-collapse-hover);
+  background: color-mix(in srgb, var(--its-accent) 10%, transparent);
+}
+
+.theme-shell[data-theme="its"] .its-fold:focus-visible {
+  outline: 2px solid var(--its-collapse-hover);
+  outline-offset: 1px;
+}
+
+.theme-shell[data-theme="its"] .its-fold:disabled {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.theme-shell[data-theme="its"] li > .its-list-fold {
+  position: absolute;
+  left: calc(-1 * (var(--its-bullet-offset) + var(--its-triangle-offset)) - 8px);
+  top: calc(0.85em - 8px);
+  font-size: inherit;
+}
+
+.theme-shell[data-theme="its"] ul.its-nested-list > li > .its-list-fold {
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.theme-shell[data-theme="its"] ul:not(.its-nested-list) > li:hover:not(:has(li:hover))::after {
+  content: "";
+  position: absolute;
+  left: calc(-1 * var(--its-rail-offset) - var(--its-rail-width) / 2);
+  top: 0.08em;
+  width: var(--its-rail-width);
+  height: 1.55em;
+  border-radius: 1px;
+  background: var(--its-active);
+  pointer-events: none;
+}
+
+.theme-shell[data-theme="its"] ul.its-nested-list > li:hover:not(:has(li:hover))::after {
+  background: var(--its-active);
+}
+
+.theme-shell[data-theme="its"] ul > li:hover:not(:has(li:hover))::before {
+  background: var(--its-active);
+}
+
+.theme-shell[data-theme="its"] li:hover:not(:has(li:hover)) > .its-list-fold {
+  color: var(--its-active);
+}
+
+.theme-shell[data-theme="its"] li.is-collapsed > ul,
+.theme-shell[data-theme="its"] li.is-collapsed > p:not(:first-of-type),
+.theme-shell[data-theme="its"] li.is-collapsed > blockquote,
+.theme-shell[data-theme="its"] li.is-collapsed > pre,
+.theme-shell[data-theme="its"] li.is-collapsed > table {
+  display: none;
+}
+
+/* Task items: the checkbox is the marker, kept to the right of the rail. */
+.theme-shell[data-theme="its"] .task-list-item .task-list-item-checkbox {
+  position: absolute;
+  z-index: 1;
+  left: calc(-1 * var(--its-bullet-offset) - 0.45em);
+  top: calc(0.85em - 0.45em);
+  -webkit-appearance: none;
+  appearance: none;
+  box-sizing: border-box;
+  width: 0.9em;
+  height: 0.9em;
+  margin: 0;
+  border: 1.5px solid var(--its-collapse);
+  border-radius: 2px;
+  background-color: transparent;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: 0.72em 0.72em;
+  cursor: pointer;
+}
+
+.theme-shell[data-theme="its"] ul.its-nested-list > li.task-list-item .task-list-item-checkbox {
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.theme-shell[data-theme="its"] .task-list-item .task-list-item-checkbox:checked {
+  border-color: var(--its-check);
+  background-color: var(--its-check);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3.2 8.4 6.4 11.6 12.8 4.8' fill='none' stroke='%23fff' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+
+.theme-shell[data-theme="its"] .task-list-item .task-list-item-checkbox:focus-visible {
+  outline: 2px solid var(--its-check);
+  outline-offset: 1px;
+}
+
+.theme-shell[data-theme="its"] li.task-list-item > label {
+  position: static;
+  margin-left: 0;
+}
+
+.theme-shell[data-theme="its"] li.task-list-item:has(> label > input.task-list-item-checkbox:checked) > label,
+.theme-shell[data-theme="its"] li.task-list-item:has(> p > label > input.task-list-item-checkbox:checked) > p > label {
+  color: var(--its-muted);
+  text-decoration: line-through;
+}
+
+/* Horizontal rule with the lightning mark. */
+.theme-shell[data-theme="its"] hr {
+  position: relative;
+  height: 20px;
+  margin: 2.3em 0;
+  border: 0;
+  background: linear-gradient(var(--its-hr-line), var(--its-hr-line)) center / 100% 1px no-repeat;
+}
+
+.theme-shell[data-theme="its"] hr::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 22px;
+  height: 22px;
+  transform: translate(-50%, -50%);
+  background: var(--its-accent);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M13 2 4 14h6l-1 8 10-12h-6l1-8z'/%3E%3C/svg%3E") center / 20px 20px no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M13 2 4 14h6l-1 8 10-12h-6l1-8z'/%3E%3C/svg%3E") center / 20px 20px no-repeat;
+}
+
+@media (max-width: 640px) {
+  .theme-shell[data-theme="its"] {
+    --its-list-indent: 2.8em;
+    --its-nested-indent: 4em;
+    --its-rail-offset: 1em;
+    --its-rail-width: 2px;
+    --its-bullet-offset: 1.9em;
+    --its-triangle-offset: 1em;
+    --its-bullet-size: 0.6em;
+  }
+
+  .theme-shell[data-theme="its"] :is(h1, h2, h3, h4, h5, h6) > .its-heading-fold {
+    left: -16px;
+  }
+}
+
+/* ---- ITS sample card: surface + GitHub-light surroundings ---- */
+.theme-shell[data-theme="its"] {
+  background: #ffffff;
+  color: var(--its-text);
+}
+
+.theme-shell[data-theme="its"] p {
+  margin: 0.55em 0 0.9em;
+}
+
+.theme-shell[data-theme="its"] a {
+  color: var(--its-link);
+  text-decoration: none;
+}
+
+.theme-shell[data-theme="its"] a:hover {
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+
+.theme-shell[data-theme="its"] strong {
+  font-weight: 600;
+}
+
+.theme-shell[data-theme="its"] code {
+  padding: 0.2em 0.4em;
+  border-radius: 6px;
+  background: rgba(129, 139, 152, 0.12);
+  font-family: "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+  font-size: 0.85em;
+}
+
+.theme-shell[data-theme="its"] blockquote {
+  margin: 0 0 16px;
+  padding: 0 1em;
+  border-left: 4px solid #d1d9e0;
+  color: #59636e;
+}
+
+.theme-shell[data-theme="its"] hr {
+  height: 4px;
+  margin: 24px 0;
+  padding: 0;
+  border: 0;
+  border-radius: 2px;
+  background: #d1d9e0;
+}
+
+.theme-shell[data-theme="its"] table {
+  display: table;
+  width: 100%;
+  margin: 16px 0;
+  border-collapse: collapse;
+  font-size: 0.92em;
+}
+
+.theme-shell[data-theme="its"] th,
+.theme-shell[data-theme="its"] td {
+  padding: 6px 13px;
+  border: 1px solid #d1d9e0;
+  text-align: left;
+  vertical-align: top;
+}
+
+.theme-shell[data-theme="its"] th {
+  background: #f6f8fa;
+  font-weight: 600;
+}
+
+.theme-shell[data-theme="its"] tr:nth-child(even) td {
+  background: #f6f8fa;
+}
+
+.theme-shell[data-theme="its"] .code-card {
+  position: relative;
+  margin: 1.3em 0;
+  padding: 34px 16px 16px;
+  border: 1px solid #d1d9e0;
+  border-radius: 6px;
+  background: #f6f8fa;
+}
+
+.theme-shell[data-theme="its"] .code-lang {
+  position: absolute;
+  top: 10px;
+  right: 15px;
+  color: #59636e;
+  font-family: "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+  font-size: 0.72em;
+}
+
+.theme-shell[data-theme="its"] .code-card pre {
+  margin: 0;
+  padding: 0;
+  background: none;
+  overflow: auto;
+}
+
+.theme-shell[data-theme="its"] .cline {
+  display: block;
+  white-space: pre;
+}
+
+.theme-shell[data-theme="its"] .ln {
+  display: inline-block;
+  width: 1.7em;
+  color: #8c959f;
+  user-select: none;
+}
+
+.theme-shell[data-theme="its"] .tok-keyword { color: #cf222e; }
+.theme-shell[data-theme="its"] .tok-func { color: #8250df; }
+.theme-shell[data-theme="its"] .tok-string { color: #0a3069; }
+.theme-shell[data-theme="its"] .tok-number { color: #0550ae; }
+.theme-shell[data-theme="its"] .tok-comment { color: #6e7781; }
+.theme-shell[data-theme="its"] .tok-builtin { color: #0550ae; }
+.theme-shell[data-theme="its"] .fixme {
+  display: inline-block;
+  padding: 0.05em 0.5em;
+  border-radius: 999px;
+  background: #eaeef2;
+  color: #1f2328;
+  font-size: 0.8em;
+  vertical-align: 0.1em;
+}
+
+/* ITS keeps its fold triangles visible (the other presets reveal them on hover). */
+.theme-shell[data-theme="its"] .fold {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+</style>
+</head>
+<body>
+
+<header class="toolbar">
+  <strong>Obsidian theme previews</strong>
+  <div class="theme-buttons" role="group" aria-label="Theme">
+    <button type="button" data-set-theme="its">ITS</button>
+    <button type="button" data-set-theme="maple-light" class="active">Maple Light</button>
+    <button type="button" data-set-theme="maple-dark">Maple Dark</button>
+    <button type="button" data-set-theme="obsidianite">Obsidianite (dark)</button>
+    <button type="button" data-set-theme="obsidianite-bracket">Obsidianite Brackets</button>
+  </div>
+  <span class="hint">Five presets. ITS sample uses its light appearance; Maple: hover for the active thread.</span>
+</header>
+
+<main class="stage">
+  <article class="theme-shell" id="shell" data-theme="maple-light">
+    <h1>Explore The Universe</h1>
+    <p>This preview uses the same document across five presets: ITS's serif headings and diamond rails, Maple's level-specific bullets, Obsidianite's neon task boxes and guides, and an Obsidianite copy that groups every item with teal brackets.</p>
+
+    <ul>
+      <li>Stories
+        <ul>
+          <li>The stories written in this universe
+            <ul>
+              <li>A quiet subplot</li>
+              <li>Third level item
+                <ul>
+                  <li>Fourth level item</li>
+                </ul>
+              </li>
+            </ul>
+          </li>
+        </ul>
+      </li>
+      <li>Characters
+        <ul>
+          <li>The base version of characters in this universe, with a deliberately long sentence that wraps onto a second line.</li>
+        </ul>
+      </li>
+      <li>Universe
+        <ul>
+          <li>The basic version of locations in this universe</li>
+        </ul>
+      </li>
+    </ul>
+
+    <h2>Tasks</h2>
+    <ul class="contains-task-list">
+      <li class="task-list-item"><label><input type="checkbox" class="task-list-item-checkbox"> Finish the map</label>
+        <ul class="contains-task-list">
+          <li>Draw the northern coast
+            <ul class="contains-task-list">
+              <li class="task-list-item"><label><input type="checkbox" class="task-list-item-checkbox"> Check the harbor</label></li>
+            </ul>
+          </li>
+          <li class="task-list-item"><label><input type="checkbox" class="task-list-item-checkbox" checked> Review the atlas</label></li>
+        </ul>
+      </li>
+      <li class="task-list-item"><label><input type="checkbox" class="task-list-item-checkbox" checked> Write the index</label></li>
+    </ul>
+
+    <h2>Notes</h2>
+    <h3>A smaller heading</h3>
+    <p>Inline <code>const universe</code> and a <a href="#">link to the atlas</a>; <strong>bold text</strong> keeps the hierarchy visible.</p>
+    <blockquote>A simple quote: the map is not the territory, but the index is where we argue about it.</blockquote>
+    <hr>
+    <p>The horizontal rule and blockquote are here to show each theme's surrounding typography, not just the lists.</p>
+
+    <h2>Tables</h2>
+    <table>
+      <thead>
+        <tr><th>Option</th><th>Example</th><th>Description</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>data</td><td>Foo</td><td>path to data files to supply the data that will be passed into templates.</td></tr>
+        <tr><td>engine</td><td>Bar</td><td>engine to be used for processing templates. Handlebars is the default.</td></tr>
+        <tr><td>ext</td><td>.dat</td><td>extension to be used for dest files.</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Syntax sample</h3>
+    <div class="code-card">
+      <div class="code-lang">JavaScript</div>
+      <pre><code><span class="cline"><span class="ln">1</span><span class="tok-keyword">var</span> foo = <span class="tok-keyword">function</span> (bar) {</span><span class="cline"><span class="ln">2</span>  <span class="tok-keyword">return</span> bar++;</span><span class="cline"><span class="ln">3</span>}; <span class="tok-comment">//</span> <span class="fixme">FIXME</span></span><span class="cline"><span class="ln">4</span></span><span class="cline"><span class="ln">5</span><span class="tok-builtin">console</span>.<span class="tok-func">log</span>(foo(<span class="tok-number">5</span>));</span></code></pre>
+    </div>
+  </article>
+</main>
+
+<script>
+  const shell = document.getElementById('shell');
+  const buttons = [...document.querySelectorAll('[data-set-theme]')];
+  const initial = new URLSearchParams(location.search).get('theme');
+
+  function setTheme(theme) {
+    shell.dataset.theme = theme;
+    buttons.forEach((button) => {
+      button.classList.toggle('active', button.dataset.setTheme === theme);
+    });
+    document.title = 'Obsidian Theme Preview — ' + theme;
+  }
+
+  buttons.forEach((button) => {
+    button.addEventListener('click', () => setTheme(button.dataset.setTheme));
+  });
+
+  if (initial) {
+    setTheme(initial);
+  }
+
+  // Add Obsidian-style collapse triangles. The visual position is theme-specific.
+  document.querySelectorAll('#shell li').forEach((item) => {
+    const nested = item.querySelector(':scope > ul');
+    if (nested === null) {
+      return;
+    }
+    nested.classList.add('its-nested-list');
+
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'fold its-fold its-list-fold';
+    button.setAttribute('aria-expanded', 'true');
+    button.setAttribute('aria-label', 'Collapse list');
+    item.prepend(button);
+
+    button.addEventListener('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      const collapsed = item.classList.toggle('is-collapsed');
+      button.setAttribute('aria-expanded', String(!collapsed));
+      button.setAttribute('aria-label', collapsed ? 'Expand list' : 'Collapse list');
+    });
+  });
+
+  // Maple's thread style follows the active branch: ancestors get rails, the active row gets a prefix.
+  let currentBranch = null;
+
+  function clearBranch() {
+    currentBranch = null;
+    shell.querySelectorAll('.is-branch, .is-hovered').forEach((node) => {
+      node.classList.remove('is-branch', 'is-hovered');
+    });
+  }
+
+  function activateBranch(item) {
+    clearBranch();
+    if (!item) {
+      return;
+    }
+
+    currentBranch = item;
+    item.classList.add('is-branch', 'is-hovered');
+
+    let node = item.parentElement;
+    while (node && node !== shell) {
+      if (node.tagName === 'LI') {
+        node.classList.add('is-branch');
+      }
+      node = node.parentElement;
+    }
+  }
+
+  shell.addEventListener('mouseover', (event) => {
+    if (!(event.target instanceof Element)) {
+      return;
+    }
+
+    const item = event.target.closest('li');
+    if (item === null) {
+      clearBranch();
+      return;
+    }
+    if (item === currentBranch) {
+      return;
+    }
+
+    activateBranch(item);
+  });
+
+  shell.addEventListener('mouseleave', clearBranch);
+
+  // Static demo paths for screenshots: ?demo=1 (leaf) or ?demo=task (task row).
+  const demo = new URLSearchParams(location.search).get('demo');
+  if (demo === '1' || demo === 'task') {
+    const label = demo === 'task' ? 'Check the harbor' : 'Fourth level item';
+    const target = [...shell.querySelectorAll('li')].find(
+      (item) => item.textContent.trim().startsWith(label),
+    );
+    if (target) {
+      activateBranch(target);
+    }
+  }
+</script>
+</body>
+</html>
