@@ -19,7 +19,7 @@ cd markedit-preview-theme-pack   # 或你的本地目录名
 
 ### 手动安装生成物
 
-如果只想安装已经构建好的 `dist/markedit-theme-pack.js`（或从 Release 下载的同一个文件），可以不运行安装脚本：
+如果只想安装已经构建好的 `dist/markedit-theme-pack.js`（仓库里已提交这个文件），可以不运行安装脚本：
 
 1. 把生成物复制到 MarkEdit 的扩展脚本目录（目录不存在时先创建）：
 
