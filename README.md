@@ -1,10 +1,12 @@
 # MarkEdit Preview Theme Pack
 
-一个跨 MarkEdit **预览模式**与 **Markdown 源码模式**的插件，内置五套可切换预览主题：ITS、Maple Light、Maple Dark、Obsidianite、Obsidianite Brackets。
+一个跨 MarkEdit **预览模式**与 **Markdown 源码模式**的插件，内置五套可切换预览主题：ITS、Maple Light、Maple Dark、Obsidianite、Obsidianite Brackets，并支持把当前主题导出为独立 HTML（可再用浏览器打印成 PDF）。
 
 切换位置：**扩展功能 > Preview Theme**（当前主题会打勾，点击立即生效）。
 
 折叠控制：**扩展功能 > 折叠层级**，包含「全部折叠 / 全部打开 / 折叠到 H1–H6」，预览和源码模式都可用。预览中标题左侧三角默认隐藏，hover 标题行时显示，点击即可折叠；源码模式使用 MarkEdit 自带的折叠三角，菜单勾选状态会跟随手动折叠变化。安装脚本也把它注册为可拖入工具栏的菜单按钮。
+
+导出：**扩展功能 > Preview Theme > 导出当前主题 HTML…**，会保存一个内嵌当前主题 CSS 的单文件 HTML。用浏览器打开后 `Cmd+P` → 存储为 PDF，就能得到和预览一致的 PDF；MarkEdit 自带的 PDF 导出不会读取预览主题。
 
 ## 安装 / 重建
 
@@ -44,6 +46,17 @@ cd markedit-preview-theme-pack   # 或你的本地目录名
 ```
 
 > 如果之前装过独立的 ITS 插件，请删除或禁用 `scripts/markedit-theme-its-preview.js`，避免两套 ITS CSS 同时注入。主题包已内嵌 ITS，不再依赖那个文件。
+
+## 导出主题 HTML / PDF
+
+入口：**扩展功能 > Preview Theme > 导出当前主题 HTML…**
+
+它会把当前主题的 CSS、Markdown 渲染结果、本地图片（base64 内联）和打印样式一起写进一个独立的 `.html` 文件。用 Chrome / Edge / Safari 打开后，`Cmd+P` → **存储为 PDF**，即可得到和预览一致的 PDF。
+
+- 打印样式按 A4 设置，代码块会自动换行，表格/图片尽量避免跨页截断。
+- 深色主题会打印整页深色背景；如果浏览器打印对话框有「背景图形 / Background graphics」选项，请保持勾选。
+- 本地相对路径图片会内联为 data URL；**远程图片**仍保留 URL，mermaid 也仍使用 MarkEdit-preview 的 CDN 脚本，因此这两类内容需要联网才能显示。
+- MarkEdit 自带的「导出到 PDF」和 `PDF Export` 扩展使用自己的模板，**不会**套用这里的预览主题；要主题化 PDF 请走上面的浏览器打印流程。
 
 ## 五套预览
 

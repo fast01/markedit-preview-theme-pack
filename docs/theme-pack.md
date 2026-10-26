@@ -1,6 +1,6 @@
 # MarkEdit Preview Theme Pack
 
-一个 MarkEdit 插件，内置五套**预览主题**，并把标题折叠层级控制扩展到 **Markdown 源码模式**：
+一个 MarkEdit 插件，内置五套**预览主题**，把标题折叠层级控制扩展到 **Markdown 源码模式**，并支持把当前主题导出为独立 HTML（可用浏览器打印成 PDF）：
 
 | 主题 | 说明 |
 | --- | --- |
@@ -77,6 +77,26 @@ MarkEdit 没有扩展级工具栏 API。安装脚本会在 `settings.json` 的 `
 ```
 
 重启 MarkEdit 后，右键工具栏 → **Customize Toolbar**（自定义工具栏），把「折叠层级」拖入工具栏即可；它点开就是上面的完整选项菜单。
+
+## 导出主题 HTML / PDF
+
+菜单：**扩展功能 > Preview Theme > 导出当前主题 HTML…**
+
+导出过程会调用 MarkEdit-preview 的 `window.MarkEditGetHtml(true)` 取得完整 HTML，然后：
+
+1. 在 `.markdown-body` 上写入当前主题的 `data-preview-theme`；
+2. 把主题包 CSS 追加到文档末尾，覆盖 MarkEdit-preview 的 GitHub base CSS；
+3. 把文档目录下的本地相对图片读成 base64 data URL（`MarkEdit.getFileObject`），让 HTML 尽量成为单文件；
+4. 追加导出页样式：屏幕端最大宽度 900px，打印端 A4、16mm/14mm 页边距、`print-color-adjust: exact`，代码块 `pre-wrap` 换行，表格/图片尽量不跨页；
+5. 用 `MarkEdit.showSavePanel` 保存为 `<文档名>-<主题>.html`。如果当前 MarkEdit 没有保存面板，则把 HTML 复制到剪贴板。
+
+PDF 不在扩展里生成，直接用浏览器打开导出的 HTML，`Cmd+P` → **存储为 PDF**。Chrome / Edge 的打印对话框如果显示「背景图形 / Background graphics」，请勾选；深色主题需要它才能把整页背景印出来。
+
+边界：
+
+- 远程图片保留原 URL，不会下载内联；mermaid 仍依赖 MarkEdit-preview 导出的 jsDelivr 脚本，需要联网。
+- 字体使用系统已有字体；Obsidianite 的 Rubik 没有内嵌，缺字体时会回退到系统无衬线字体。
+- MarkEdit 自带「文件 > 共享 > 导出到 PDF」和本仓库外部的 `PDF Export` 扩展都使用各自的模板，不会读取预览主题 CSS；主题化 PDF 请走浏览器打印。
 
 ## settings.json 配置
 
