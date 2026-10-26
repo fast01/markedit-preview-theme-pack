@@ -201,6 +201,16 @@ body[data-theme-pack-surface="obsidianite-bracket"] {
   --mp-h4: #8ab4d8;
   --mp-h5: #b3a0d6;
   --mp-h6: #7fc7c7;
+  --code-fg: #c9d1d9;
+  --code-keyword: #ff7b72;
+  --code-entity: #d2a8ff;
+  --code-constant: #79c0ff;
+  --code-string: #a5d6ff;
+  --code-symbol: #ffa657;
+  --code-comment: #8b949e;
+  --code-tag: #7ee787;
+  --code-section: #79c0ff;
+  --code-bullet: #ffa657;
 }
 
 .markdown-body[data-preview-theme^="maple"] {
@@ -561,6 +571,16 @@ body[data-theme-pack-surface="obsidianite-bracket"] {
   --ob-line: rgba(107, 202, 251, 0.24);
   --ob-thread: rgba(14, 210, 247, 0.26);
   --ob-code: #191621;
+  --code-fg: #d6d6d6;
+  --code-keyword: #f4569d;
+  --code-entity: #6bcafb;
+  --code-constant: #38d6f0;
+  --code-string: #a5d6ff;
+  --code-symbol: #ffd580;
+  --code-comment: #8b949e;
+  --code-tag: #7ee787;
+  --code-section: #6bcafb;
+  --code-bullet: #ffd580;
   padding: 36px 40px 48px !important;
   background: var(--ob-bg);
   color: var(--ob-text);
@@ -965,4 +985,121 @@ body[data-theme-pack-surface="obsidianite-bracket"] {
 
 .markdown-body[data-preview-theme="obsidianite-bracket"] .its-list-fold {
   left: -58px;
+}
+
+/* ==========================================================================
+   Fenced-code syntax tokens for dark themes
+   MarkEdit-preview applies GitHub's light highlight.js palette when the host
+   appearance is light, which leaves strings/comments nearly invisible on our
+   dark code backgrounds. Keep the token palette readable per theme.
+   ========================================================================== */
+:is(
+  .markdown-body[data-preview-theme="maple-dark"],
+  .markdown-body[data-preview-theme^="obsidianite"]
+) pre code.hljs {
+  color: var(--code-fg);
+  background: transparent;
+}
+
+:is(
+  .markdown-body[data-preview-theme="maple-dark"],
+  .markdown-body[data-preview-theme^="obsidianite"]
+) :is(.hljs-doctag, .hljs-keyword, .hljs-template-tag, .hljs-template-variable, .hljs-type, .hljs-variable.language_) {
+  color: var(--code-keyword);
+}
+
+:is(
+  .markdown-body[data-preview-theme="maple-dark"],
+  .markdown-body[data-preview-theme^="obsidianite"]
+) :is(.hljs-title, .hljs-title.class_, .hljs-title.class_.inherited__, .hljs-title.function_) {
+  color: var(--code-entity);
+}
+
+:is(
+  .markdown-body[data-preview-theme="maple-dark"],
+  .markdown-body[data-preview-theme^="obsidianite"]
+) :is(.hljs-attr, .hljs-attribute, .hljs-literal, .hljs-meta, .hljs-number, .hljs-operator, .hljs-variable, .hljs-selector-attr, .hljs-selector-class, .hljs-selector-id) {
+  color: var(--code-constant);
+}
+
+:is(
+  .markdown-body[data-preview-theme="maple-dark"],
+  .markdown-body[data-preview-theme^="obsidianite"]
+) :is(.hljs-regexp, .hljs-string) {
+  color: var(--code-string);
+}
+
+:is(
+  .markdown-body[data-preview-theme="maple-dark"],
+  .markdown-body[data-preview-theme^="obsidianite"]
+) :is(.hljs-built_in, .hljs-symbol) {
+  color: var(--code-symbol);
+}
+
+:is(
+  .markdown-body[data-preview-theme="maple-dark"],
+  .markdown-body[data-preview-theme^="obsidianite"]
+) :is(.hljs-comment, .hljs-code, .hljs-formula) {
+  color: var(--code-comment);
+}
+
+:is(
+  .markdown-body[data-preview-theme="maple-dark"],
+  .markdown-body[data-preview-theme^="obsidianite"]
+) :is(.hljs-name, .hljs-quote, .hljs-selector-tag, .hljs-selector-pseudo) {
+  color: var(--code-tag);
+}
+
+:is(
+  .markdown-body[data-preview-theme="maple-dark"],
+  .markdown-body[data-preview-theme^="obsidianite"]
+) .hljs-subst {
+  color: var(--code-fg);
+}
+
+:is(
+  .markdown-body[data-preview-theme="maple-dark"],
+  .markdown-body[data-preview-theme^="obsidianite"]
+) .hljs-section {
+  color: var(--code-section);
+  font-weight: bold;
+}
+
+:is(
+  .markdown-body[data-preview-theme="maple-dark"],
+  .markdown-body[data-preview-theme^="obsidianite"]
+) .hljs-bullet {
+  color: var(--code-bullet);
+}
+
+:is(
+  .markdown-body[data-preview-theme="maple-dark"],
+  .markdown-body[data-preview-theme^="obsidianite"]
+) .hljs-emphasis {
+  color: var(--code-fg);
+  font-style: italic;
+}
+
+:is(
+  .markdown-body[data-preview-theme="maple-dark"],
+  .markdown-body[data-preview-theme^="obsidianite"]
+) .hljs-strong {
+  color: var(--code-fg);
+  font-weight: bold;
+}
+
+:is(
+  .markdown-body[data-preview-theme="maple-dark"],
+  .markdown-body[data-preview-theme^="obsidianite"]
+) .hljs-addition {
+  color: #7ee787;
+  background-color: rgba(63, 185, 80, 0.15);
+}
+
+:is(
+  .markdown-body[data-preview-theme="maple-dark"],
+  .markdown-body[data-preview-theme^="obsidianite"]
+) .hljs-deletion {
+  color: #ffa198;
+  background-color: rgba(248, 81, 73, 0.15);
 }
