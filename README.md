@@ -47,15 +47,37 @@ cd markedit-preview-theme-pack   # 或你的本地目录名
 
 ## 五套预览
 
-| 主题 | 预览 |
-| --- | --- |
-| ITS | [theme-its.png](previews/presets/theme-its.png) |
-| Maple Light | [theme-maple-light.png](previews/presets/theme-maple-light.png) |
-| Maple Dark | [theme-maple-dark.png](previews/presets/theme-maple-dark.png) |
-| Obsidianite | [theme-obsidianite.png](previews/presets/theme-obsidianite.png) |
-| Obsidianite Brackets | [theme-obsidianite-bracket.png](previews/presets/theme-obsidianite-bracket.png) |
+以下截图都来自同一个交互样张，点击图片可以查看原图。样张本身支持顶部实时切换主题：[pages/obsidian-themes.html](pages/obsidian-themes.html)。
 
-交互样张：[pages/obsidian-themes.html](pages/obsidian-themes.html)
+### ITS
+
+经典 ITS 预览样式，标题带装饰线；勾选 `autoFold` 时 H3 及以下会自动折叠。
+
+[<img src="previews/presets/theme-its.png" width="680" alt="ITS 预览">](previews/presets/theme-its.png)
+
+### Maple Light
+
+Maple 的列表体系，浅色；灰色主轨始终显示，hover 行出现绿色 active 分支。
+
+[<img src="previews/presets/theme-maple-light.png" width="680" alt="Maple Light 预览">](previews/presets/theme-maple-light.png)
+
+### Maple Dark
+
+Maple Light 的深色版本，列表导轨、空心圆点和任务框沿用同一套几何规则。
+
+[<img src="previews/presets/theme-maple-dark.png" width="680" alt="Maple Dark 预览">](previews/presets/theme-maple-dark.png)
+
+### Obsidianite
+
+深色霓虹风格：7px 实心圆点、14px 任务框，圆点和方框都落在导轨中心线上。
+
+[<img src="previews/presets/theme-obsidianite.png" width="680" alt="Obsidianite 预览">](previews/presets/theme-obsidianite.png)
+
+### Obsidianite Brackets
+
+Obsidianite 的括号变体：竖线换成右侧 teal 括号，包住本级和所有子级；层级标记逐级变小。
+
+[<img src="previews/presets/theme-obsidianite-bracket.png" width="680" alt="Obsidianite Brackets 预览">](previews/presets/theme-obsidianite-bracket.png)
 
 ## 目录
 
@@ -84,7 +106,7 @@ cd markedit-preview-theme-pack   # 或你的本地目录名
 │   ├── harness.html              # 旧 ITS harness
 │   ├── prototype.html            # 早期原型
 │   └── install-legacy-its.sh     # 旧独立 ITS 安装器（默认拒绝执行）
-└── test.md
+└── test.md                       # 本地测试文件（已加入 .gitignore，不随仓库分发）
 ```
 
 详细说明见 [docs/theme-pack.md](docs/theme-pack.md)。

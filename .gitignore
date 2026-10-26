@@ -1,3 +1,6 @@
 .DS_Store
 node_modules/
 *.log
+
+# 本地测试文件，不纳入仓库
+test.md
