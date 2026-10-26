@@ -121,6 +121,7 @@ CSS 全部限定在 `.markdown-body[data-preview-theme="..."]` 下，不会影�
 - 数字列表（`<ol>`）使用原生数字作为标记；装饰圆点/导轨只作用于无序列表（`<ul>`）。Brackets 的数字列表仍保留括号，但括号会放在数字右侧；折叠三角也按数字列表重新定位。
 - Maple 表格显式设置表头、单元格背景和文字颜色，避免宿主处于深色外观时 GitHub 深色表格变量透入；表头仍为主题绿色，偶数行使用主题底色混合。
 - 深色三主题（Maple Dark / Obsidianite / Obsidianite Brackets）显式覆盖了 highlight.js 的代码 token 颜色。MarkEdit-preview 在宿主为浅色外观时会注入 GitHub 浅色调色板，字符串（`#032f62`）和注释在深色代码背景上几乎不可读；现在 Maple Dark 使用 GitHub Dark 调色，Obsidianite/Brackets 使用青/粉/琥珀调色。行内代码颜色不受影响。
+- Obsidianite/Brackets 的表格显式设置深色表面：表头是 7% accent 混合 `--ob-panel`，正文使用 `--ob-panel`，偶数行叠加 4% accent；表格内的行内代码用 10% accent 背景与单元格区分。这样不会让 GitHub 的浅色表格变量在深色主题里透出白底。
 - ITS 的标题自动折叠只属于 ITS；Maple/Obsidianite 只折叠列表，与之前的样张一致。
 - Maple 的 active 分支是 hover 行为；静态截图里的 active 行是用 demo 路径生成的。
 - Obsidianite 是深色主题，会同时设置页面 overscroll 背景；Maple 浅色/深色也会同步预览页背景。

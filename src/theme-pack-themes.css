@@ -862,12 +862,15 @@ body[data-theme-pack-surface="obsidianite-bracket"] {
   left: -3em;
 }
 
-/* Obsidianite table. */
+/* Obsidianite table. Explicit dark surfaces keep GitHub's light table
+   variables from showing through (same host-bleed issue as Maple Light). */
 .markdown-body[data-preview-theme^="obsidianite"] table {
   display: table;
   width: 100%;
   margin: 1.2em 0;
   border-collapse: collapse;
+  background: var(--ob-panel);
+  color: var(--ob-text);
   font-size: 0.92em;
 }
 
@@ -879,10 +882,24 @@ body[data-theme-pack-surface="obsidianite-bracket"] {
   vertical-align: top;
 }
 
+.markdown-body[data-preview-theme^="obsidianite"] thead tr,
 .markdown-body[data-preview-theme^="obsidianite"] th {
-  background: rgba(14, 210, 247, 0.06);
+  background: color-mix(in srgb, var(--ob-accent) 7%, var(--ob-panel));
   color: var(--ob-accent);
   font-weight: 600;
+}
+
+.markdown-body[data-preview-theme^="obsidianite"] td {
+  background: var(--ob-panel);
+  color: var(--ob-text);
+}
+
+.markdown-body[data-preview-theme^="obsidianite"] tr:nth-child(even) td {
+  background: color-mix(in srgb, var(--ob-accent) 4%, var(--ob-panel));
+}
+
+.markdown-body[data-preview-theme^="obsidianite"] :is(th, td) code {
+  background: rgba(14, 210, 247, 0.1);
 }
 
 /* ==========================================================================
