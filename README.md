@@ -11,7 +11,7 @@
 ### 自动安装（推荐）
 
 ```bash
-cd markedit-its-preview
+cd markedit-preview-theme-pack   # 或你的本地目录名
 ./scripts/install-theme-pack.sh
 ```
 
