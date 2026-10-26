@@ -64,6 +64,8 @@ cd markedit-preview-theme-pack   # 或你的本地目录名
 
 源码模式直接操作 CodeMirror 折叠状态：菜单会按当前文档重新计算折叠，并在操作后同步行号槽的折叠三角；手动点击三角折叠/展开后，菜单的勾选状态也会随之更新。源码模式不会在打开文档时自动折叠，只有点击菜单项才会生效。ITS 的 `autoFold` 启动设置仍然只作用于 ITS 预览；预览标题状态会在预览重渲染和主题切换时保留，但不会跨应用重启保存（ITS 的自动折叠除外）。
 
+从源码模式切换到预览模式时，插件会按当前光标/可视行在预览里定位到对应的 `data-line-from` 块，并调用 Bidirectional Preview Sync 的 `beginPreviewScroll` 标记滚动来源，避免把预览滚动反向同步到编辑器；等待预览重渲染和装饰完成后再校正一次位置。
+
 ### 工具栏按钮
 
 MarkEdit 没有扩展级工具栏 API。安装脚本会在 `settings.json` 的 `editor.customToolbarItems` 中注册一个菜单型工具栏项：

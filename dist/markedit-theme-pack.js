@@ -1524,7 +1524,7 @@ body[data-theme-pack-surface="obsidianite-bracket"] {
 }
 `;
 
-const VERSION = "1.3.0";
+const VERSION = "1.3.1";
 const SETTINGS_KEY = "extension.markeditThemePack";
 const STYLE_ID = "markedit-theme-pack-style";
 const MARKER_CLASS = "theme-pack-decorated-marker";
@@ -1580,6 +1580,10 @@ let decorateSerial = 0;
 let currentBranch = null;
 let persistTimer = null;
 let persistChain = Promise.resolve();
+let paneVisible = null;
+let pendingPreviewLine = null;
+let previewScrollTimer = null;
+let previewScrollToken = 0;
 let editorSnapshotState = null;
 let editorSnapshotView = null;
 let editorSnapshot = null;
@@ -2007,6 +2011,149 @@ function syncSurface() {
       element.setAttribute(SURFACE_ATTR, surface);
     }
   }
+
+  const visible = pane !== null && isElementVisible(pane);
+  if (pane !== null) {
+    if (paneVisible === false && visible) {
+      queuePreviewScroll(pane);
+    }
+    if (!visible) {
+      pendingPreviewLine = null;
+      clearTimeout(previewScrollTimer);
+      previewScrollTimer = null;
+    }
+    paneVisible = visible;
+  } else {
+    paneVisible = null;
+  }
+}
+
+function queuePreviewScroll(pane) {
+  const line = sourceLineIndex();
+  if (line === null) {
+    return;
+  }
+
+  pendingPreviewLine = line;
+  const token = ++previewScrollToken;
+  clearTimeout(previewScrollTimer);
+  previewScrollTimer = setTimeout(() => {
+    if (token !== previewScrollToken) {
+      return;
+    }
+    applyPendingPreviewScroll(pane, 0);
+  }, 80);
+}
+
+function applyPendingPreviewScroll(pane, attempt) {
+  if (pendingPreviewLine === null || !pane.isConnected || !isElementVisible(pane)) {
+    return;
+  }
+
+  const target = findPreviewLine(pane, pendingPreviewLine);
+  if (target === null) {
+    if (attempt < 10) {
+      previewScrollTimer = setTimeout(() => applyPendingPreviewScroll(pane, attempt + 1), 60);
+    }
+    return;
+  }
+
+  const paneRect = pane.getBoundingClientRect();
+  const targetRect = target.getBoundingClientRect();
+  if (targetRect.width === 0 && targetRect.height === 0) {
+    if (attempt < 10) {
+      previewScrollTimer = setTimeout(() => applyPendingPreviewScroll(pane, attempt + 1), 60);
+    }
+    return;
+  }
+
+  const sync = window.__markeditBidirectionalPreviewSync__;
+  if (sync && sync.isActive !== false && typeof sync.beginPreviewScroll === "function") {
+    sync.beginPreviewScroll({ animated: false });
+  }
+  pane.scrollTop = Math.max(0, pane.scrollTop + targetRect.top - paneRect.top - 10);
+  pendingPreviewLine = null;
+}
+
+function findPreviewLine(pane, line) {
+  const nodes = [...pane.querySelectorAll("[data-line-from][data-line-to]")];
+  let best = null;
+  for (const node of nodes) {
+    if (node.getClientRects().length === 0) {
+      continue;
+    }
+    const from = Number(node.getAttribute("data-line-from"));
+    const to = Number(node.getAttribute("data-line-to"));
+    if (!Number.isFinite(from) || !Number.isFinite(to)) {
+      continue;
+    }
+    if (line < from || line > to) {
+      continue;
+    }
+    const span = to - from;
+    const bestSpan = best === null
+      ? Infinity
+      : Number(best.getAttribute("data-line-to")) - Number(best.getAttribute("data-line-from"));
+    if (span < bestSpan) {
+      best = node;
+    }
+  }
+  if (best !== null) {
+    return best;
+  }
+
+  let fallback = null;
+  for (const node of nodes) {
+    if (node.getClientRects().length === 0) {
+      continue;
+    }
+    const from = Number(node.getAttribute("data-line-from"));
+    if (Number.isFinite(from) && from <= line) {
+      if (fallback === null || from > Number(fallback.getAttribute("data-line-from"))) {
+        fallback = node;
+      }
+    }
+  }
+  return fallback;
+}
+
+function sourceLineIndex() {
+  try {
+    const view = MarkEdit.editorView;
+    if (!view || !view.state || !view.state.doc) {
+      return null;
+    }
+
+    const selection = view.state.selection.main;
+    const lineNumber = view.state.doc.lineAt(selection.head).number - 1;
+    const scrollDOM = view.scrollDOM;
+    if (!scrollDOM) {
+      return lineNumber;
+    }
+
+    const viewport = scrollDOM.getBoundingClientRect();
+    if (viewport.width === 0 || viewport.height === 0) {
+      return lineNumber;
+    }
+
+    if (typeof view.coordsAtPos === "function") {
+      const coords = view.coordsAtPos(selection.head);
+      if (coords && coords.top >= viewport.top && coords.bottom <= viewport.bottom) {
+        return lineNumber;
+      }
+    }
+
+    if (typeof view.posAtCoords === "function") {
+      const topPos = view.posAtCoords({ x: viewport.left + 40, y: viewport.top + 8 });
+      if (topPos !== null && topPos !== undefined) {
+        return view.state.doc.lineAt(topPos).number - 1;
+      }
+    }
+
+    return lineNumber;
+  } catch {
+    return null;
+  }
 }
 
 function setupPane() {
@@ -2099,6 +2246,12 @@ async function decorate() {
     pane.appendChild(marker);
 
     syncSurface();
+
+    if (pendingPreviewLine !== null) {
+      clearTimeout(previewScrollTimer);
+      previewScrollTimer = null;
+      applyPendingPreviewScroll(pane, 0);
+    }
 
     if (settings.debug === true) {
       writeDebug(pane);
