@@ -613,6 +613,14 @@ body[data-theme-pack-surface="obsidianite-bracket"] {
   --code-tag: #7ee787;
   --code-section: #79c0ff;
   --code-bullet: #ffa657;
+  --mermaid-text: #c3d0dc;
+  --mermaid-panel: #151b22;
+  --mermaid-panel-strong: #1b2430;
+  --mermaid-border: #3e5366;
+  --mermaid-line: #7f8d9b;
+  --mermaid-accent: #6f93b3;
+  --mermaid-cluster: rgba(111, 147, 179, 0.08);
+  --mermaid-note-text: #333333;
 }
 
 .markdown-body[data-preview-theme^="maple"] {
@@ -983,6 +991,14 @@ body[data-theme-pack-surface="obsidianite-bracket"] {
   --code-tag: #7ee787;
   --code-section: #6bcafb;
   --code-bullet: #ffd580;
+  --mermaid-text: #d6d6d6;
+  --mermaid-panel: #191621;
+  --mermaid-panel-strong: #221c2f;
+  --mermaid-border: rgba(14, 210, 247, 0.35);
+  --mermaid-line: rgba(107, 202, 251, 0.55);
+  --mermaid-accent: #0fb6d6;
+  --mermaid-cluster: rgba(14, 210, 247, 0.06);
+  --mermaid-note-text: #333333;
   padding: 36px 40px 48px !important;
   background: var(--ob-bg);
   color: var(--ob-text);
@@ -1521,6 +1537,106 @@ body[data-theme-pack-surface="obsidianite-bracket"] {
 ) .hljs-deletion {
   color: #ffa198;
   background-color: rgba(248, 81, 73, 0.15);
+}
+
+/* ==========================================================================
+   Mermaid diagrams on dark themes
+   MarkEdit-preview initializes mermaid from the OS appearance, so a light
+   host gives diagrams dark text / white boxes even when the preview theme is
+   dark. Recolor the common diagram parts and keep note text readable.
+   ========================================================================== */
+:is(
+  .markdown-body[data-preview-theme="maple-dark"],
+  .markdown-body[data-preview-theme^="obsidianite"]
+) .mermaid svg {
+  fill: var(--mermaid-text) !important;
+  background: transparent;
+}
+
+:is(
+  .markdown-body[data-preview-theme="maple-dark"],
+  .markdown-body[data-preview-theme^="obsidianite"]
+) .mermaid svg :is(text, tspan, .messageText, .labelText, .labelText > tspan, .loopText, .loopText > tspan, .sectionTitle, .sectionTitle > tspan, .nodeLabel, .clusterLabel, .title) {
+  fill: var(--mermaid-text) !important;
+  stroke: none !important;
+  color: var(--mermaid-text) !important;
+}
+
+:is(
+  .markdown-body[data-preview-theme="maple-dark"],
+  .markdown-body[data-preview-theme^="obsidianite"]
+) .mermaid svg :is(.noteText, .noteText > tspan) {
+  fill: var(--mermaid-note-text) !important;
+  color: var(--mermaid-note-text) !important;
+}
+
+:is(
+  .markdown-body[data-preview-theme="maple-dark"],
+  .markdown-body[data-preview-theme^="obsidianite"]
+) .mermaid svg :is(.actor, .actor-box rect, .actor-bottom, .actor-top, .actor-man circle, .labelBox, .activation0, .activation1, .activation2, .node rect, .node polygon, .node circle, .edgeLabel rect, .labelBkg, .edgeLabelBackground, g rect.rect) {
+  fill: var(--mermaid-panel) !important;
+  stroke: var(--mermaid-border) !important;
+}
+
+:is(
+  .markdown-body[data-preview-theme="maple-dark"],
+  .markdown-body[data-preview-theme^="obsidianite"]
+) .mermaid svg .cluster rect {
+  fill: var(--mermaid-cluster) !important;
+  stroke: var(--mermaid-border) !important;
+}
+
+:is(
+  .markdown-body[data-preview-theme="maple-dark"],
+  .markdown-body[data-preview-theme^="obsidianite"]
+) .mermaid svg :is(.actor-line, .messageLine0, .messageLine1, .flowchart-link, .edgePaths path, .edgePath path) {
+  stroke: var(--mermaid-line) !important;
+}
+
+:is(
+  .markdown-body[data-preview-theme="maple-dark"],
+  .markdown-body[data-preview-theme^="obsidianite"]
+) .mermaid svg line {
+  fill: transparent !important;
+  stroke: var(--mermaid-line) !important;
+}
+
+:is(
+  .markdown-body[data-preview-theme="maple-dark"],
+  .markdown-body[data-preview-theme^="obsidianite"]
+) .mermaid svg .loopLine {
+  stroke: var(--mermaid-line) !important;
+  fill: var(--mermaid-line) !important;
+}
+
+:is(
+  .markdown-body[data-preview-theme="maple-dark"],
+  .markdown-body[data-preview-theme^="obsidianite"]
+) .mermaid svg :is(.marker, .error-icon, [id$="-arrowhead"] path, [id$="-crosshead"] path) {
+  fill: var(--mermaid-line) !important;
+  stroke: var(--mermaid-line) !important;
+}
+
+:is(
+  .markdown-body[data-preview-theme="maple-dark"],
+  .markdown-body[data-preview-theme^="obsidianite"]
+) .mermaid svg :is(.edgeLabel, .edgeLabel p, .edgeLabel span, .edgeLabel div, .node foreignObject div) {
+  background: var(--mermaid-panel) !important;
+  color: var(--mermaid-text) !important;
+}
+
+:is(
+  .markdown-body[data-preview-theme="maple-dark"],
+  .markdown-body[data-preview-theme^="obsidianite"]
+) .mermaid svg .sequenceNumber {
+  fill: var(--mermaid-panel-strong) !important;
+}
+
+:is(
+  .markdown-body[data-preview-theme="maple-dark"],
+  .markdown-body[data-preview-theme^="obsidianite"]
+) .mermaid svg [id$="-sequencenumber"] {
+  fill: var(--mermaid-text) !important;
 }
 `;
 
