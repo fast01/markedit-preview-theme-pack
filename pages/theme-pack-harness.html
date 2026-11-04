@@ -1144,13 +1144,39 @@
      appearance, so the harness loads the same pair: light always, dark only
      when the browser itself is dark. That is exactly the mismatch the tone
      palettes in the theme pack fix. -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@highlightjs/cdn-assets@11.9.0/styles/github.min.css">
-<link rel="stylesheet" media="(prefers-color-scheme: dark)" href="https://cdn.jsdelivr.net/npm/@highlightjs/cdn-assets@11.9.0/styles/github-dark.min.css">
+<link rel="stylesheet" id="hljs-light" href="https://cdn.jsdelivr.net/npm/@highlightjs/cdn-assets@11.9.0/styles/github.min.css">
+<link rel="stylesheet" id="hljs-dark" href="https://cdn.jsdelivr.net/npm/@highlightjs/cdn-assets@11.9.0/styles/github-dark.min.css">
 <script defer src="https://cdn.jsdelivr.net/npm/@highlightjs/cdn-assets@11.9.0/highlight.min.js"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/@highlightjs/cdn-assets@11.9.0/languages/python.min.js"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/@highlightjs/cdn-assets@11.9.0/languages/json.min.js"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/@highlightjs/cdn-assets@11.9.0/languages/bash.min.js"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/@highlightjs/cdn-assets@11.9.0/languages/diff.min.js"></script>
+<script>
+  // MarkEdit-preview derives both the highlight.js palette and the mermaid theme
+  // from the OS appearance, so a browser in dark mode does not look like a Mac in
+  // light mode. ?host=light|dark pins that input to match the real app.
+  window.__harnessHost = (function () {
+    const forced = new URLSearchParams(location.search).get("host");
+    if (forced === "light" || forced === "dark") {
+      return forced;
+    }
+    return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  })();
+
+  window.applyHarnessHost = function () {
+    const dark = window.__harnessHost === "dark";
+    const light = document.getElementById("hljs-light");
+    const darkLink = document.getElementById("hljs-dark");
+    if (light) {
+      light.disabled = dark;
+    }
+    if (darkLink) {
+      darkLink.disabled = !dark;
+    }
+  };
+
+  window.applyHarnessHost();
+</script>
 <style>
   html, body { margin: 0; padding: 0; background: Canvas; color: CanvasText; color-scheme: light dark; }
   body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif; }
@@ -1181,6 +1207,7 @@
 <div class="harness-bar">
   <strong>Integration harness</strong>
   <span class="harness-note">GitHub base + MarkEdit Theme Pack</span>
+  <span class="harness-note" id="host-note"></span>
   <button type="button" id="rerender">Re-render pane</button>
   <button type="button" id="expand-all">Expand all headings</button>
   <button type="button" id="collapse-all">Collapse all headings</button>
@@ -1426,6 +1453,9 @@ pie showData
   const pane = document.getElementById('pane');
   const sample = document.getElementById('sample');
 
+  document.getElementById('host-note').textContent =
+    '宿主外观：' + window.__harnessHost + '（?host=light|dark 可固定，与 MarkEdit 当前系统外观保持一致）';
+
   function renderPane() {
     pane.replaceChildren(sample.content.cloneNode(true));
     highlightPane();
@@ -1608,7 +1638,7 @@ pie showData
         .then(({ default: mermaid }) => {
           mermaid.initialize({
             startOnLoad: false,
-            theme: window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "default",
+            theme: window.__harnessHost === "dark" ? "dark" : "default",
           });
           return mermaid;
         })

@@ -93,12 +93,12 @@ MarkEdit 没有扩展级工具栏 API。安装脚本会在 `settings.json` 的 `
 插件把解析后的值写到 `.markdown-body[data-theme-pack-tone="dark|light"]`（`auto` 会在这里落成具体的 light/dark，系统切换深浅色时重新解析），派生配色全部由它决定：
 
 - 代码块 token：`--code-fg / --code-keyword / --code-string / --code-comment / --code-addition …`，浅色用 GitHub Light，深色用 GitHub Dark；Maple Dark、Obsidianite 在各自的主题块里再覆盖一次，保留主题自己的色相。
-- mermaid：MarkEdit-preview 用 mermaid v12 的 neo 外观，图表配色写在 SVG 自带的 `#mermaid-xxx …` 样式里，取值同样只看宿主深浅色。插件再加一个开关属性 `data-theme-pack-mermaid-paint`，由 `shouldPaintMermaid(tone)` 决定：**主题本身是深色**（图表要用主题自己的配色），或**宿主明暗和主题相反**（可读性问题）时才上色；浅色主题 + 浅色宿主完全不覆盖，`classDef` 的彩色节点原样保留。上色规则读的还是 `--mermaid-*`，所以深色 tone 套深色板、浅色 tone 套浅色板。
+- mermaid：MarkEdit-preview 用 mermaid v12 的 neo 外观，图表配色写在 SVG 自带的 `#mermaid-xxx …` 样式里，只看宿主深浅色。插件用 `[data-theme-pack-mermaid-paint]` 控制覆盖，规则是 **只有深色主题才覆盖**（`shouldPaintMermaid(tone) => tone === "dark"`）：深色主题在浅色宿主下会拿到淡紫/白的原生图，接近黑底黑字，必须重画；浅色主题则一律保留 mermaid 自己的配色（淡紫 actor + 黄便签），因为那套颜色比主题色更耐看，覆盖它会把 `classDef` 的彩色节点压平、还会让图表和奶油底色糊在一起。代价是：浅色主题 + 深色宿主时图会是 mermaid 的深色调色板（图内自洽，只是和页面明暗不一致）。
 - ITS 原本用 `@media (prefers-color-scheme: dark)` 切换自己的 `--its-*` 变量；构建时（`unwrapItsDarkAppearance`）会把这一段改写成 `[data-theme-pack-tone="dark"]` 选择器，让深浅色只有一个来源。这样导出的 HTML 把当时看到的 tone 冻结下来，换一台深浅色相反的机器打开也不会出现「深色代码块 + 浅色正文」的错位。
 
 新增主题时只需要在 `THEMES` 里给出 `tone`，代码块与 mermaid 会自动套用对应调色板；只有想要不同的主题色时才在 CSS 里覆盖 `--code-*` / `--mermaid-*`。
 
-不启动 MarkEdit 也能检查配色：在仓库根目录 `python3 -m http.server`，打开 `pages/tone-check.html`，页面会直接从 `dist/markedit-theme-pack.js` 里取出 CSS，为每套主题写死一个 tone 面板；勾选「模拟深色宿主」可以看到浅色主题在深色宿主下被重新上色（对应 `shouldPaintMermaid`）。`pages/theme-pack-harness.html` 则加载真正的 highlight.js 与 mermaid（走 jsDelivr），文档里包含 Python/JSON/Bash/diff 代码块、对齐表格、时序图（autonumber + note）、含 `classDef` 的流程图、状态图、饼图、嵌套引用、`details`、相对路径图片和脚注，用来在浏览器里复现 MarkEdit 的渲染链。
+不启动 MarkEdit 也能检查配色：在仓库根目录 `python3 -m http.server`，打开 `pages/tone-check.html`，页面会直接从 `dist/markedit-theme-pack.js` 里取出 CSS，为每套主题写死一个 tone 面板；「宿主切到深色」勾选框切换的是替身 SVG 的 mermaid 原生调色板，用来演示深色主题被覆盖、浅色主题不被覆盖。`pages/theme-pack-harness.html` 加载真正的 highlight.js 与 mermaid（走 jsDelivr），文档里包含 Python/JSON/Bash/diff 代码块、对齐表格、时序图（autonumber + note）、含 `classDef` 的流程图、状态图、饼图、嵌套引用、`details`、相对路径图片和脚注，能直接看到实际效果。浏览器的系统深浅色不一定等于 MarkEdit 的，所以 harness 支持 `?host=light|dark` 固定这个输入（同时切换 hljs 样式表和 mermaid 初始化主题），页面顶部会显示当前宿主外观。
 
 ## 导出主题 HTML / PDF
 
@@ -106,7 +106,7 @@ MarkEdit 没有扩展级工具栏 API。安装脚本会在 `settings.json` 的 `
 
 导出过程会调用 MarkEdit-preview 的 `window.MarkEditGetHtml(true)` 取得完整 HTML，然后：
 
-1. 在 `.markdown-body` 上写入当前主题的 `data-preview-theme`、解析后的 `data-theme-pack-tone`，以及需要时写入 `data-theme-pack-mermaid-paint`（导出时的宿主与主题明暗是否冲突）；
+1. 在 `.markdown-body` 上写入当前主题的 `data-preview-theme`、解析后的 `data-theme-pack-tone`，深色主题再补一个 `data-theme-pack-mermaid-paint`（决定导出的图要不要重画）；
 2. 把主题包 CSS 追加到文档末尾，覆盖 MarkEdit-preview 的 GitHub base CSS；
 3. 把文档目录下的本地相对图片读成 base64 data URL（`MarkEdit.getFileObject`），让 HTML 尽量成为单文件；
 4. 追加导出页样式：屏幕端最大宽度 900px，打印端 A4、16mm/14mm 页边距、`print-color-adjust: exact`，代码块 `pre-wrap` 换行，表格/图片尽量不跨页；
@@ -164,7 +164,7 @@ CSS 全部限定在 `.markdown-body[data-preview-theme="..."]` 下，不会影�
 - 数字列表（`<ol>`）使用原生数字作为标记；装饰圆点/导轨只作用于无序列表（`<ul>`）。Brackets 的数字列表仍保留括号，但括号会放在数字右侧；折叠三角也按数字列表重新定位。
 - Maple 表格显式设置表头、单元格背景和文字颜色，避免宿主处于深色外观时 GitHub 深色表格变量透入；表头仍为主题绿色，偶数行使用主题底色混合。
 - 代码块 token 颜色按 `data-theme-pack-tone` 取值，不再按主题硬编码。背景是：MarkEdit-preview 在宿主为浅色外观时注入 GitHub 浅色 highlight.js 调色板，字符串（`#032f62`）和注释在深色预览背景上几乎不可读。深色 tone 用 GitHub Dark，Maple Dark / Obsidianite 再覆盖成各自主题色相；行内代码颜色不受影响。
-- mermaid 同样因为宿主外观被初始化成与主题无关的配色：浅色宿主 + 深色主题时 actor/node/文字/连线接近黑色，深色宿主 + 浅色主题时反过来变成奶油底上的深色块。插件在「主题是深色」或「宿主与主题明暗相反」时用 `--mermaid-*` 重写 SVG 的常见元素（actor、node、cluster、edgeLabel、marker、message/loop/label 文本、lifeline、sequence number 圆圈等），文本用更亮的主题前景色；便签改成低饱和琥珀底 + 琥珀字，不再用刺眼的纯黄块，并关闭 mermaid 的 drop-shadow 滤镜。浅色主题 + 浅色宿主不覆盖，那种场景下 `classDef` 颜色完全保留；一旦需要覆盖，用户自定义的节点填充色就可能被主题面板色替换。
+- mermaid 的配色只看宿主外观，不看主题：浅色宿主 + 深色主题会拿到淡紫底、深色文字的图，放在深色页面上接近一片黑。插件只在深色 tone 下用 `--mermaid-*` 重写 SVG 的常见元素（actor、node、cluster、edgeLabel、marker、message/loop/label 文本、lifeline、sequence number 圆圈等），文本换成更亮的主题前景色；便签改成低饱和琥珀底 + 琥珀字，不再用刺眼的纯黄块，并关闭 mermaid 的 drop-shadow 滤镜。**浅色主题一律不覆盖**，保留 mermaid 原生配色与 `classDef` 彩色节点——实测这套比按主题重画的效果更好；副作用是深色宿主 + 浅色主题时图仍是 mermaid 自己的深色版（图内自洽，只是与页面明暗不一致）。
 - Obsidianite/Brackets 的表格显式设置深色表面：表头是 7% accent 混合 `--ob-panel`，正文使用 `--ob-panel`，偶数行叠加 4% accent；表格内的行内代码用 10% accent 背景与单元格区分。这样不会让 GitHub 的浅色表格变量在深色主题里透出白底。
 - ITS 的标题自动折叠只属于 ITS；Maple/Obsidianite 只折叠列表，与之前的样张一致。
 - Maple 的 active 分支是 hover 行为；静态截图里的 active 行是用 demo 路径生成的。

@@ -40,14 +40,49 @@
   .markdown-body[data-preview-theme="its"][data-theme-pack-tone="dark"] :is(th, td) {
     border-color: #30363d;
   }
+
+  /* mermaid 的调色板只看宿主深浅色（MarkEdit-preview 就是这么初始化的）。这里用
+     #fx 作用域模拟它注入的 #mermaid-xxx 样式；主题包只在深色 tone 下用
+     !important 覆盖，浅色主题永远保留下面这套原生颜色。 */
+  body[data-fixture-host="light"] #fx .actor { fill: #ececff; stroke: #9370db; stroke-width: 1; }
+  body[data-fixture-host="light"] #fx text.actor > tspan { fill: #333333; stroke: none; }
+  body[data-fixture-host="light"] #fx .messageText { fill: #333333; }
+  body[data-fixture-host="light"] #fx .noteText > tspan { fill: #333333; }
+  body[data-fixture-host="light"] #fx .actor-line { stroke: #cccccc; }
+  body[data-fixture-host="light"] #fx .messageLine0,
+  body[data-fixture-host="light"] #fx .flowchart-link { stroke: #333333; }
+  body[data-fixture-host="light"] #fx .messageLine1 { stroke: #333333; }
+  body[data-fixture-host="light"] #fx .note { fill: #fff5ad; stroke: #decc93; }
+  body[data-fixture-host="light"] #fx .node rect { fill: #ececff; stroke: #9370db; }
+  body[data-fixture-host="light"] #fx .nodeLabel div { color: #333333; }
+  body[data-fixture-host="light"] #fx .edgeLabelBackground { fill: #e8e8e8; }
+  body[data-fixture-host="light"] #fx .marker { fill: #333333; stroke: #333333; }
+  body[data-fixture-host="light"] #fx circle.sequenceNumber { fill: #333333; stroke: #000000; }
+  body[data-fixture-host="light"] #fx text.sequenceNumber { fill: #ffffff; }
+
+  body[data-fixture-host="dark"] #fx .actor { fill: #1f2020; stroke: #cccccc; stroke-width: 1; }
+  body[data-fixture-host="dark"] #fx text.actor > tspan { fill: lightgrey; stroke: none; }
+  body[data-fixture-host="dark"] #fx .messageText { fill: lightgrey; }
+  body[data-fixture-host="dark"] #fx .noteText > tspan { fill: lightgrey; }
+  body[data-fixture-host="dark"] #fx .actor-line { stroke: #cccccc; }
+  body[data-fixture-host="dark"] #fx .messageLine0,
+  body[data-fixture-host="dark"] #fx .messageLine1,
+  body[data-fixture-host="dark"] #fx .flowchart-link { stroke: #cccccc; }
+  body[data-fixture-host="dark"] #fx .note { fill: #474949; stroke: #2f2f2f; }
+  body[data-fixture-host="dark"] #fx .node rect { fill: #1f2020; stroke: #cccccc; }
+  body[data-fixture-host="dark"] #fx .nodeLabel div { color: lightgrey; }
+  body[data-fixture-host="dark"] #fx .edgeLabelBackground { fill: #1f2020; }
+  body[data-fixture-host="dark"] #fx .marker { fill: #cccccc; stroke: #cccccc; }
+  body[data-fixture-host="dark"] #fx circle.sequenceNumber { fill: #cccccc; stroke: #ffffff; }
+  body[data-fixture-host="dark"] #fx text.sequenceNumber { fill: #1f2020; }
 </style>
 </head>
-<body>
+<body data-fixture-host="light">
 <p class="note">
   每个面板写死一个 <code>data-theme-pack-tone</code>，用来在没有 MarkEdit 的情况下检查 tone 驱动的代码块与 mermaid 配色。
   真实 mermaid 图由 MarkEdit-preview 渲染；这里的 SVG 只是按 mermaid v12 的类名手写的替身。
   用法：<code>python3 -m http.server</code> 后打开 <code>/pages/tone-check.html</code>。
-  <label style="margin-left:12px"><input type="checkbox" id="host-toggle"> 模拟深色宿主（浅色主题会被重新上色，对应插件里的 <code>shouldPaintMermaid</code>）</label>
+  <label style="margin-left:12px"><input type="checkbox" id="host-toggle"> 宿主切到深色（mermaid 改用 dark 初始化：深色主题仍被主题包覆盖，浅色主题保留 mermaid 自己的颜色）</label>
 </p>
 <div class="grid" id="grid"></div>
 <script>
@@ -68,22 +103,10 @@ const TABLE = `<table><thead><tr><th>字段</th><th>类型</th><th>说明</th></
 <tr><td>expired_at</td><td>datetime</td><td>过期时间</td></tr></tbody></table>`;
 
 // mermaid v12 with its default "neo" look emits an id-scoped stylesheet inside
-// the SVG (rect.actor + text.actor.actor-box + tspan labels), so the fixture
-// does the same: unpainted panels show those native colors, painted panels let
-// the pack's !important tone rules win.
+// the SVG (rect.actor + text.actor > tspan), so the fixture keeps its native
+// colors out of the pack's reach and lets the pack override them with
+// !important. The native palette is host-driven, hence identical for all panels.
 const MERMAID = `<div class="mermaid"><svg id="fx" viewBox="0 0 460 210" width="460" height="210">
-<style>
-  #fx .actor { fill: #ECECFF; stroke: #888888; stroke-width: 1; }
-  #fx text.actor > tspan { fill: #28253D; stroke: none; }
-  #fx .messageText, #fx .noteText, #fx .sequenceNumber { fill: #333333; }
-  #fx .actor-line, #fx .messageLine0, #fx .messageLine1, #fx .flowchart-link { stroke: #cccccc; }
-  #fx .note { fill: #fff5ad; stroke: #aaaa33; }
-  #fx .node rect { fill: #ECECFF; stroke: #888888; }
-  #fx .nodeLabel div { color: #28253D; }
-  #fx .edgeLabelBackground { fill: #e8e8e8; }
-  #fx .marker { fill: #333333; stroke: #333333; }
-  #fx circle { fill: #eeeeee; stroke: #999999; }
-</style>
 <g class="actors">
   <rect class="actor actor-box" data-look="neo" x="10" y="4" width="110" height="34" rx="3"/>
   <text class="actor actor-box" x="65" y="21" text-anchor="middle"><tspan x="65" dy="0">客户端</tspan></text>
@@ -149,18 +172,15 @@ async function main() {
   document.title = "Theme Pack tone check — ready";
 }
 
-// Mirrors shouldPaintMermaid() in the plugin: dark themes always get the theme
-// palette, light themes only when the host appearance disagrees with them.
+// Mirrors shouldPaintMermaid() in the plugin: only dark themes get the theme's
+// own diagram palette. Light themes always keep mermaid's native colors, which
+// is why the host switch below changes them but not the light panels.
 function paintMermaid(pane, tone) {
-  if (tone === "dark" || hostIsDark()) {
+  if (tone === "dark") {
     pane.setAttribute("data-theme-pack-mermaid-paint", "true");
   } else {
     pane.removeAttribute("data-theme-pack-mermaid-paint");
   }
-}
-
-function hostIsDark() {
-  return document.body.dataset.hostAppearance === "dark";
 }
 
 function repaint() {
@@ -173,7 +193,7 @@ document.addEventListener("click", (event) => {
   if (event.target?.id !== "host-toggle") {
     return;
   }
-  document.body.dataset.hostAppearance = event.target.checked ? "dark" : "light";
+  document.body.dataset.fixtureHost = event.target.checked ? "dark" : "light";
   repaint();
 });
 

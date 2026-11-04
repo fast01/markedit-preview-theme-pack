@@ -65,7 +65,7 @@
  * CSS sources here. Do not hand-edit CSS in this file or in dist/.
  */
 
-const VERSION = "1.5.0";
+const VERSION = "1.5.1";
 const SETTINGS_KEY = "extension.markeditThemePack";
 const STYLE_ID = "markedit-theme-pack-style";
 const MARKER_CLASS = "theme-pack-decorated-marker";
@@ -210,13 +210,15 @@ function currentTone() {
   return resolveTone(currentTheme);
 }
 
-// MarkEdit-preview initializes mermaid from the OS appearance, never from the
-// preview theme, so a diagram can arrive in the wrong palette. Paint over it
-// when the theme is dark (its palette is part of the look) or when the host
-// disagrees with the theme; a light theme on a light host stays untouched, which
-// keeps the user's own classDef fills.
+// MarkEdit-preview initializes mermaid from the OS appearance, so a dark theme
+// on a light host gets light-lavender diagrams that read as black-on-black.
+// Only dark themes are repainted: mermaid's own default palette (lavender
+// actors, yellow notes) is the look people expect from a light theme, so a
+// light theme keeps it even when the host is dark and the diagram turns into
+// mermaid's dark variant. Repainting light themes flattened classDef fills and
+// washed the diagrams into the page background.
 function shouldPaintMermaid(tone) {
-  return tone === "dark" || systemIsDark();
+  return tone === "dark";
 }
 
 function registerMenu() {
