@@ -211,14 +211,16 @@ body[data-theme-pack-surface="obsidianite-bracket"] {
   --code-tag: #7ee787;
   --code-section: #79c0ff;
   --code-bullet: #ffa657;
-  --mermaid-text: #c3d0dc;
+  --mermaid-text: #d8e2ec;
   --mermaid-panel: #151b22;
   --mermaid-panel-strong: #1b2430;
-  --mermaid-border: #3e5366;
-  --mermaid-line: #7f8d9b;
+  --mermaid-border: #56718a;
+  --mermaid-line: #9fb0c0;
   --mermaid-accent: #6f93b3;
   --mermaid-cluster: rgba(111, 147, 179, 0.08);
-  --mermaid-note-text: #333333;
+  --mermaid-note-bg: rgba(214, 160, 106, 0.12);
+  --mermaid-note-border: rgba(214, 160, 106, 0.35);
+  --mermaid-note-text: #e0b07a;
 }
 
 .markdown-body[data-preview-theme^="maple"] {
@@ -589,14 +591,16 @@ body[data-theme-pack-surface="obsidianite-bracket"] {
   --code-tag: #7ee787;
   --code-section: #6bcafb;
   --code-bullet: #ffd580;
-  --mermaid-text: #d6d6d6;
+  --mermaid-text: #e6edf3;
   --mermaid-panel: #191621;
   --mermaid-panel-strong: #221c2f;
-  --mermaid-border: rgba(14, 210, 247, 0.35);
-  --mermaid-line: rgba(107, 202, 251, 0.55);
+  --mermaid-border: rgba(14, 210, 247, 0.45);
+  --mermaid-line: rgba(107, 202, 251, 0.72);
   --mermaid-accent: #0fb6d6;
   --mermaid-cluster: rgba(14, 210, 247, 0.06);
-  --mermaid-note-text: #333333;
+  --mermaid-note-bg: rgba(255, 213, 128, 0.12);
+  --mermaid-note-border: rgba(255, 213, 128, 0.35);
+  --mermaid-note-text: #ffd580;
   padding: 36px 40px 48px !important;
   background: var(--ob-bg);
   color: var(--ob-text);
@@ -1147,8 +1151,15 @@ body[data-theme-pack-surface="obsidianite-bracket"] {
   .markdown-body[data-preview-theme="maple-dark"],
   .markdown-body[data-preview-theme^="obsidianite"]
 ) .mermaid svg {
-  fill: var(--mermaid-text) !important;
+  color: var(--mermaid-text) !important;
   background: transparent;
+}
+
+:is(
+  .markdown-body[data-preview-theme="maple-dark"],
+  .markdown-body[data-preview-theme^="obsidianite"]
+) .mermaid svg * {
+  filter: none !important;
 }
 
 :is(
@@ -1171,9 +1182,33 @@ body[data-theme-pack-surface="obsidianite-bracket"] {
 :is(
   .markdown-body[data-preview-theme="maple-dark"],
   .markdown-body[data-preview-theme^="obsidianite"]
-) .mermaid svg :is(.actor, .actor-box rect, .actor-bottom, .actor-top, .actor-man circle, .labelBox, .activation0, .activation1, .activation2, .node rect, .node polygon, .node circle, .edgeLabel rect, .labelBkg, .edgeLabelBackground, g rect.rect) {
+) .mermaid svg :is(.actor, .actor-box rect, .actor-bottom, .actor-top, .labelBox, .activation0, .activation1, .activation2, .node rect, .node polygon, .node circle, g rect.rect) {
+  fill: var(--mermaid-panel-strong) !important;
+  stroke: var(--mermaid-border) !important;
+}
+
+:is(
+  .markdown-body[data-preview-theme="maple-dark"],
+  .markdown-body[data-preview-theme^="obsidianite"]
+) .mermaid svg circle {
+  fill: var(--mermaid-panel-strong) !important;
+  stroke: var(--mermaid-border) !important;
+}
+
+:is(
+  .markdown-body[data-preview-theme="maple-dark"],
+  .markdown-body[data-preview-theme^="obsidianite"]
+) .mermaid svg :is(.edgeLabel rect, .labelBkg, .edgeLabelBackground) {
   fill: var(--mermaid-panel) !important;
   stroke: var(--mermaid-border) !important;
+}
+
+:is(
+  .markdown-body[data-preview-theme="maple-dark"],
+  .markdown-body[data-preview-theme^="obsidianite"]
+) .mermaid svg .note {
+  fill: var(--mermaid-note-bg) !important;
+  stroke: var(--mermaid-note-border) !important;
 }
 
 :is(
@@ -1221,13 +1256,6 @@ body[data-theme-pack-surface="obsidianite-bracket"] {
 ) .mermaid svg :is(.edgeLabel, .edgeLabel p, .edgeLabel span, .edgeLabel div, .node foreignObject div) {
   background: var(--mermaid-panel) !important;
   color: var(--mermaid-text) !important;
-}
-
-:is(
-  .markdown-body[data-preview-theme="maple-dark"],
-  .markdown-body[data-preview-theme^="obsidianite"]
-) .mermaid svg .sequenceNumber {
-  fill: var(--mermaid-panel-strong) !important;
 }
 
 :is(
