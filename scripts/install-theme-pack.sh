@@ -63,7 +63,7 @@ pack.update(
         "file": "markedit-theme-pack.js",
         "id": "markedit-theme-pack",
         "sha256": sha,
-        "version": "1.3.1",
+        "version": "1.4.0",
     }
 )
 

@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<title>Theme Pack — tone check</title>
+<style>
+  /* GitHub base CSS, as MarkEdit-preview loads it before the theme pack. */
+  .markdown-body { font-family: -apple-system, "Segoe UI", sans-serif; padding: 24px; }
+  .markdown-body pre { padding: 16px; overflow: auto; border-radius: 6px; background: #f6f8fa; }
+  .markdown-body code { font-family: ui-monospace, Menlo, monospace; font-size: 0.92em; }
+  .markdown-body table { border-collapse: collapse; }
+  .markdown-body th, .markdown-body td { border: 1px solid #d0d7de; padding: 6px 13px; }
+  .markdown-body thead { background: #f6f8fa; }
+  .markdown-body h2 { border-bottom: 1px solid #eaecef; padding-bottom: 0.3em; }
+
+  /* highlight.js github-light — the palette that breaks dark previews. */
+  .hljs { color: #24292e; background: #ffffff; }
+  .hljs-comment, .hljs-quote { color: #6a737d; font-style: italic; }
+  .hljs-keyword, .hljs-selector-tag { color: #d73a49; }
+  .hljs-string, .hljs-addition { color: #032f62; }
+  .hljs-number, .hljs-literal { color: #005cc5; }
+  .hljs-title, .hljs-section { color: #6f42c1; }
+  .hljs-attr, .hljs-attribute { color: #005cc5; }
+  .hljs-built_in { color: #e36209; }
+
+  body { margin: 0; background: #6b6b6b; }
+  .grid { display: grid; grid-template-columns: repeat(2, 620px); gap: 18px; padding: 18px; }
+  .caption { background: #ffd54d; color: #111; font: 600 13px/1.4 sans-serif; padding: 4px 8px; }
+  .mermaid { margin: 12px 0; }
+  .note { font: 13px/1.6 sans-serif; color: #fff; padding: 0 20px 14px; }
+
+  /* ITS paints no surface of its own: pre/table colors come from the host.
+     Emulate a dark host for the dark-tone ITS pane so the two ITS panels show
+     what MarkEdit actually looks like in each appearance. */
+  .markdown-body[data-preview-theme="its"][data-theme-pack-tone="dark"] pre,
+  .markdown-body[data-preview-theme="its"][data-theme-pack-tone="dark"] thead {
+    background: #161b22;
+  }
+
+  .markdown-body[data-preview-theme="its"][data-theme-pack-tone="dark"] :is(th, td) {
+    border-color: #30363d;
+  }
+</style>
+</head>
+<body>
+<p class="note">
+  每个面板写死一个 <code>data-theme-pack-tone</code>，用来在没有 MarkEdit 的情况下检查 tone 驱动的代码块与 mermaid 配色。
+  真实 mermaid 图由 MarkEdit-preview 渲染；这里的 SVG 只是按 mermaid v12 的类名手写的替身。
+  用法：<code>python3 -m http.server</code> 后打开 <code>/pages/tone-check.html</code>。
+</p>
+<div class="grid" id="grid"></div>
+<script>
+const CODE = `<pre><code class="hljs language-python"><span class="hljs-comment"># 计算斐波那契数列</span>
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">fib</span>(n: <span class="hljs-built_in">int</span>) -&gt; <span class="hljs-meta">str</span>:
+    <span class="hljs-string">"返回第 n 项，注意这里是字符串"</span>
+    memo = {<span class="hljs-number">0</span>: <span class="hljs-number">1</span>}
+    <span class="hljs-keyword">if</span> n <span class="hljs-operator">in</span> memo:
+        <span class="hljs-keyword">return</span> memo[n]
+    <span class="hljs-keyword">return</span> <span class="hljs-string">f"fib(<span class="hljs-subst">{n}</span>)"</span> <span class="hljs-comment"># tail comment</span>
+
+<span class="hljs-addition">+ added line</span>
+<span class="hljs-deletion">- removed line</span></code></pre>`;
+
+const TABLE = `<table><thead><tr><th>字段</th><th>类型</th><th>说明</th></tr></thead>
+<tbody><tr><td><code>uid</code></td><td>int64</td><td>用户标识</td></tr>
+<tr><td>token</td><td>string</td><td>访问令牌</td></tr>
+<tr><td>expired_at</td><td>datetime</td><td>过期时间</td></tr></tbody></table>`;
+
+// Class names mirror what mermaid v12 emits for a sequence + flow diagram.
+const MERMAID = `<div class="mermaid"><svg viewBox="0 0 460 210" width="460" height="210">
+<g class="actors"><g class="actor" transform="translate(10,4)"><rect class="actor-box" width="110" height="34" rx="3"/><text class="actor" x="65" y="22" text-anchor="middle"><tspan>客户端</tspan></text></g>
+<g class="actor" transform="translate(330,4)"><rect class="actor-box" width="110" height="34" rx="3"/><text class="actor" x="65" y="22" text-anchor="middle"><tspan>服务端</tspan></text></g></g>
+<line class="actor-line" x1="65" y1="38" x2="65" y2="200" stroke-width="1.5" stroke-dasharray="3,3"/>
+<line class="actor-line" x1="385" y1="38" x2="385" y2="200" stroke-width="1.5" stroke-dasharray="3,3"/>
+<g class="message0"><line class="messageLine0" x1="65" y1="80" x2="385" y2="80" stroke-width="2"/>
+<text class="messageText" x="225" y="75" text-anchor="middle">POST /login</text>
+<path class="marker" d="M0,0 L9,4.5 L0,9 z"/></g>
+<g class="message1"><line class="messageLine1" x1="385" y1="120" x2="65" y2="120" stroke-width="2" stroke-dasharray="3,3"/>
+<text class="messageText" x="225" y="115" text-anchor="middle">token 已签发</text></g>
+<g class="note"><rect class="note" width="150" height="30" x="60" y="160"/><text class="noteText" x="135" y="180" text-anchor="middle"><tspan>便签文字</tspan></text></g>
+<circle class="sequence" cx="20" cy="80" r="9"/><text class="sequenceNumber" x="20" y="84" text-anchor="middle">1</text>
+<g class="flow"><g class="node"><rect class="basic" width="120" height="40" x="320" y="155"/><foreignObject class="nodeLabel" x="320" y="155" width="120" height="40"><div xmlns="http://www.w3.org/1999/xhtml">流程节点</div></foreignObject></g>
+<path class="flowchart-link" d="M320 175 L250 175" stroke-width="1.5"/><rect class="edgeLabelBackground" x="252" y="160" width="46" height="20"/><foreignObject class="edgeLabel" x="252" y="160" width="46" height="20"><div xmlns="http://www.w3.org/1999/xhtml" class="label"><span>条件</span></div></foreignObject></g>
+</svg></div>`;
+
+const PANES = [
+  ["its", "light"],
+  ["its", "dark"],
+  ["maple-light", "light"],
+  ["maple-dark", "dark"],
+  ["obsidianite", "dark"],
+  ["obsidianite-bracket", "dark"],
+];
+
+async function main() {
+  const source = await (await fetch("../dist/markedit-theme-pack.js")).text();
+  const start = source.indexOf("const CSS = `") + "const CSS = `".length;
+  const css = source.slice(start, source.indexOf("`;", start));
+  const style = document.createElement("style");
+  style.textContent = css;
+  document.head.append(style);
+
+  const grid = document.getElementById("grid");
+  for (const [theme, tone] of PANES) {
+    const section = document.createElement("section");
+    section.style.background = tone === "dark" ? "#101418" : "#ffffff";
+
+    const caption = document.createElement("div");
+    caption.className = "caption";
+    caption.textContent = `${theme} · tone=${tone}`;
+
+    const pane = document.createElement("article");
+    pane.className = "markdown-body";
+    pane.setAttribute("data-preview-theme", theme);
+    pane.setAttribute("data-theme-pack-tone", tone);
+    pane.innerHTML = `<h2>标题 Heading</h2><p>正文文字，包含 <code>inline code</code> 与 <a href="#">链接</a>。</p>`
+      + CODE + TABLE + MERMAID;
+
+    section.append(caption, pane);
+    grid.append(section);
+  }
+
+  document.title = "Theme Pack tone check — ready";
+}
+
+main().catch((error) => {
+  document.title = "tone check failed: " + error.message;
+});
+</script>
+</body>
+</html>

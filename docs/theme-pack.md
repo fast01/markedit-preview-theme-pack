@@ -80,13 +80,33 @@ MarkEdit 没有扩展级工具栏 API。安装脚本会在 `settings.json` 的 `
 
 重启 MarkEdit 后，右键工具栏 → **Customize Toolbar**（自定义工具栏），把「折叠层级」拖入工具栏即可；它点开就是上面的完整选项菜单。
 
+## 明暗 tone 自动配色
+
+每套主题只声明一个 `tone`：
+
+| 主题 | tone | 含义 |
+| --- | --- | --- |
+| ITS | `auto` | 跟随系统深浅色 |
+| Maple Light | `light` | 始终浅色 |
+| Maple Dark / Obsidianite / Obsidianite Brackets | `dark` | 始终深色 |
+
+插件把解析后的值写到 `.markdown-body[data-theme-pack-tone="dark|light"]`（`auto` 会在这里落成具体的 light/dark，系统切换深浅色时重新解析），派生配色全部由它决定：
+
+- 代码块 token：`--code-fg / --code-keyword / --code-string / --code-comment / --code-addition …`，浅色用 GitHub Light，深色用 GitHub Dark；Maple Dark、Obsidianite 在各自的主题块里再覆盖一次，保留主题自己的色相。
+- mermaid：只在 `dark` tone 下重写 SVG 配色。浅色时 mermaid 自身就是浅色，不需要覆盖，覆盖反而会把 `classDef` 的彩色节点压平成面板色。
+- ITS 原本用 `@media (prefers-color-scheme: dark)` 切换自己的 `--its-*` 变量；构建时（`unwrapItsDarkAppearance`）会把这一段改写成 `[data-theme-pack-tone="dark"]` 选择器，让深浅色只有一个来源。这样导出的 HTML 把当时看到的 tone 冻结下来，换一台深浅色相反的机器打开也不会出现「深色代码块 + 浅色正文」的错位。
+
+新增主题时只需要在 `THEMES` 里给出 `tone`，代码块与 mermaid 会自动套用对应调色板；只有想要不同的主题色时才在 CSS 里覆盖 `--code-*` / `--mermaid-*`。
+
+不启动 MarkEdit 也能检查配色：在仓库根目录 `python3 -m http.server`，打开 `pages/tone-check.html`，页面会直接从 `dist/markedit-theme-pack.js` 里取出 CSS，为每套主题写死一个 tone 面板。
+
 ## 导出主题 HTML / PDF
 
 菜单：**扩展功能 > Preview Theme > 导出当前主题 HTML…**
 
 导出过程会调用 MarkEdit-preview 的 `window.MarkEditGetHtml(true)` 取得完整 HTML，然后：
 
-1. 在 `.markdown-body` 上写入当前主题的 `data-preview-theme`；
+1. 在 `.markdown-body` 上写入当前主题的 `data-preview-theme` 和解析后的 `data-theme-pack-tone`；
 2. 把主题包 CSS 追加到文档末尾，覆盖 MarkEdit-preview 的 GitHub base CSS；
 3. 把文档目录下的本地相对图片读成 base64 data URL（`MarkEdit.getFileObject`），让 HTML 尽量成为单文件；
 4. 追加导出页样式：屏幕端最大宽度 900px，打印端 A4、16mm/14mm 页边距、`print-color-adjust: exact`，代码块 `pre-wrap` 换行，表格/图片尽量不跨页；
@@ -126,9 +146,10 @@ PDF 不在扩展里生成，直接用浏览器打开导出的 HTML，`Cmd+P` →
 | `../src/theme-pack-main.js` | 插件行为：菜单、主题切换、折叠、Maple hover 分支、持久化、debug |
 | `../src/theme-pack-themes.css` | Maple / Obsidianite / Brackets 的 scoped CSS |
 | `../src/its/markedit-theme-its-preview.js` | 原 ITS 插件源码；build 时提取其中的 ITS CSS。项目里保留，安装目录中的同名副本会被删除 |
-| `../scripts/build-theme-pack.js` | 拼接 CSS + JS，生成 `../dist/markedit-theme-pack.js` 并做语法检查 |
+| `../scripts/build-theme-pack.js` | 拼接 CSS + JS，生成 `../dist/markedit-theme-pack.js` 并做语法检查；同时把 ITS 的 `prefers-color-scheme` 深色块改写成 `[data-theme-pack-tone="dark"]` |
 | `../scripts/install-theme-pack.sh` | 构建、安装、更新 extensions/settings，并清理旧 ITS 安装 |
 | `../pages/theme-pack-harness.html` | 带 GitHub base 与 mock MarkEdit 的浏览器联调页，支持主题切换 |
+| `../pages/tone-check.html` | 六个面板（含 ITS 浅/深）直接写死 `data-theme-pack-tone`，用来在没有 MarkEdit 的情况下检查代码块与 mermaid 的 tone 配色 |
 | `../dist/markedit-theme-pack.js` | 生成的安装文件（不要直接改 CSS） |
 
 CSS 全部限定在 `.markdown-body[data-preview-theme="..."]` 下，不会影响编辑器或其它扩展。
@@ -142,8 +163,8 @@ CSS 全部限定在 `.markdown-body[data-preview-theme="..."]` 下，不会影�
 
 - 数字列表（`<ol>`）使用原生数字作为标记；装饰圆点/导轨只作用于无序列表（`<ul>`）。Brackets 的数字列表仍保留括号，但括号会放在数字右侧；折叠三角也按数字列表重新定位。
 - Maple 表格显式设置表头、单元格背景和文字颜色，避免宿主处于深色外观时 GitHub 深色表格变量透入；表头仍为主题绿色，偶数行使用主题底色混合。
-- 深色三主题（Maple Dark / Obsidianite / Obsidianite Brackets）显式覆盖了 highlight.js 的代码 token 颜色。MarkEdit-preview 在宿主为浅色外观时会注入 GitHub 浅色调色板，字符串（`#032f62`）和注释在深色代码背景上几乎不可读；现在 Maple Dark 使用 GitHub Dark 调色，Obsidianite/Brackets 使用青/粉/琥珀调色。行内代码颜色不受影响。
-- 同样因为宿主外观，MarkEdit-preview 初始化 mermaid 时也会选择浅色主题，导致深色预览里的 actor/node/文字/连线接近黑色。深色三主题现在覆盖 mermaid SVG 的常见元素（actor、node、cluster、edgeLabel、marker、message/loop/label 文本、lifeline、sequence number 圆圈等），文本用更亮的主题前景色；便签改成低饱和琥珀底 + 琥珀字，不再用刺眼的纯黄块，并关闭 mermaid 的 drop-shadow 滤镜。由于这是 CSS 覆盖，用户用 `classDef` 自定义的节点填充色可能会被主题面板色覆盖。
+- 代码块 token 颜色按 `data-theme-pack-tone` 取值，不再按主题硬编码。背景是：MarkEdit-preview 在宿主为浅色外观时注入 GitHub 浅色 highlight.js 调色板，字符串（`#032f62`）和注释在深色预览背景上几乎不可读。深色 tone 用 GitHub Dark，Maple Dark / Obsidianite 再覆盖成各自主题色相；行内代码颜色不受影响。
+- mermaid 同样因为宿主外观被初始化成浅色主题，深色预览里 actor/node/文字/连线接近黑色。现在只有深色 tone 会重写 mermaid SVG 的常见元素（actor、node、cluster、edgeLabel、marker、message/loop/label 文本、lifeline、sequence number 圆圈等），文本用更亮的主题前景色；便签改成低饱和琥珀底 + 琥珀字，不再用刺眼的纯黄块，并关闭 mermaid 的 drop-shadow 滤镜。由于这是 CSS 覆盖，深色主题里用户用 `classDef` 自定义的节点填充色可能会被主题面板色覆盖；浅色主题不做覆盖，`classDef` 颜色保持原样。
 - Obsidianite/Brackets 的表格显式设置深色表面：表头是 7% accent 混合 `--ob-panel`，正文使用 `--ob-panel`，偶数行叠加 4% accent；表格内的行内代码用 10% accent 背景与单元格区分。这样不会让 GitHub 的浅色表格变量在深色主题里透出白底。
 - ITS 的标题自动折叠只属于 ITS；Maple/Obsidianite 只折叠列表，与之前的样张一致。
 - Maple 的 active 分支是 hover 行为；静态截图里的 active 行是用 demo 路径生成的。

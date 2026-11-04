@@ -8,6 +8,8 @@
 
 导出：**扩展功能 > Preview Theme > 导出当前主题 HTML…**，会保存一个内嵌当前主题 CSS 的单文件 HTML。用浏览器打开后 `Cmd+P` → 存储为 PDF，就能得到和预览一致的 PDF；MarkEdit 自带的 PDF 导出不会读取预览主题。
 
+配色跟随主题明暗：代码块语法高亮和 mermaid 图表的颜色由每套主题声明的 `tone`（`light` / `dark` / `auto`）自动选取调色板，不再逐个主题手工修补；ITS 用 `auto` 跟随系统深浅色。导出的 HTML 会冻结导出时看到的明暗，换一台深浅色相反的电脑打开也不会串色。
+
 ## 安装 / 重建
 
 ### 自动安装（推荐）
@@ -54,6 +56,7 @@ cd markedit-preview-theme-pack   # 或你的本地目录名
 它会把当前主题的 CSS、Markdown 渲染结果、本地图片（base64 内联）和打印样式一起写进一个独立的 `.html` 文件。用 Chrome / Edge / Safari 打开后，`Cmd+P` → **存储为 PDF**，即可得到和预览一致的 PDF。
 
 - 打印样式按 A4 设置，代码块会自动换行，表格/图片尽量避免跨页截断。
+- 深色主题下 mermaid 会按主题调色板重写配色，`classDef` 自定义的节点填充色可能被面板色覆盖；浅色主题保留 mermaid 自己的颜色。
 - 深色主题会打印整页深色背景；如果浏览器打印对话框有「背景图形 / Background graphics」选项，请保持勾选。
 - 本地相对路径图片会内联为 data URL；**远程图片**仍保留 URL，mermaid 也仍使用 MarkEdit-preview 的 CDN 脚本，因此这两类内容需要联网才能显示。
 - MarkEdit 自带的「导出到 PDF」和 `PDF Export` 扩展使用自己的模板，**不会**套用这里的预览主题；要主题化 PDF 请走上面的浏览器打印流程。

@@ -155,6 +155,92 @@ body[data-theme-pack-surface="obsidianite-bracket"] {
 }
 
 /* ==========================================================================
+   Tone-driven palettes
+   The preview tone is written to .markdown-body[data-theme-pack-tone] by the
+   plugin. Light is the fallback; dark overrides it, and individual themes can
+   override the generic dark palette afterwards.
+   ========================================================================== */
+.markdown-body[data-preview-theme] {
+  --code-fg: #24292e;
+  --code-keyword: #d73a49;
+  --code-entity: #6f42c1;
+  --code-constant: #005cc5;
+  --code-string: #032f62;
+  --code-symbol: #e36209;
+  --code-comment: #6a737d;
+  --code-tag: #22863a;
+  --code-section: #005cc5;
+  --code-bullet: #735c0f;
+  --code-addition: #22863a;
+  --code-addition-bg: #f0fff4;
+  --code-deletion: #b31d28;
+  --code-deletion-bg: #ffeef2;
+  --mermaid-text: #24292e;
+  --mermaid-panel: #ffffff;
+  --mermaid-panel-strong: #f6f8fa;
+  --mermaid-border: #d0d7de;
+  --mermaid-line: #57606a;
+  --mermaid-accent: #0969da;
+  --mermaid-cluster: rgba(9, 105, 218, 0.05);
+  --mermaid-note-bg: #fff5ad;
+  --mermaid-note-border: #f0d85a;
+  --mermaid-note-text: #333333;
+}
+
+.markdown-body[data-theme-pack-tone="dark"] {
+  --code-fg: #c9d1d9;
+  --code-keyword: #ff7b72;
+  --code-entity: #d2a8ff;
+  --code-constant: #79c0ff;
+  --code-string: #a5d6ff;
+  --code-symbol: #ffa657;
+  --code-comment: #8b949e;
+  --code-tag: #7ee787;
+  --code-section: #79c0ff;
+  --code-bullet: #ffa657;
+  --code-addition: #aff5b4;
+  --code-addition-bg: rgba(63, 185, 80, 0.15);
+  --code-deletion: #ffd8d3;
+  --code-deletion-bg: rgba(248, 81, 73, 0.15);
+  --mermaid-text: #c9d1d9;
+  --mermaid-panel: #0d1117;
+  --mermaid-panel-strong: #161b22;
+  --mermaid-border: #30363d;
+  --mermaid-line: #8b949e;
+  --mermaid-accent: #58a6ff;
+  --mermaid-cluster: rgba(88, 166, 255, 0.08);
+  --mermaid-note-bg: rgba(210, 153, 34, 0.12);
+  --mermaid-note-border: rgba(210, 153, 34, 0.35);
+  --mermaid-note-text: #e3b341;
+}
+
+.markdown-body[data-preview-theme="its"] {
+  --mermaid-text: #333333;
+  --mermaid-panel: #ffffff;
+  --mermaid-panel-strong: #f6f8fa;
+  --mermaid-border: #c9d8ee;
+  --mermaid-line: #6f7780;
+  --mermaid-accent: #8a282c;
+  --mermaid-cluster: rgba(201, 216, 238, 0.25);
+  --mermaid-note-bg: rgba(255, 245, 173, 0.85);
+  --mermaid-note-border: #f0d85a;
+  --mermaid-note-text: #333333;
+}
+
+.markdown-body[data-preview-theme="its"][data-theme-pack-tone="dark"] {
+  --mermaid-text: #c8ced8;
+  --mermaid-panel: #101418;
+  --mermaid-panel-strong: #161b22;
+  --mermaid-border: #3a4b66;
+  --mermaid-line: #8e99a8;
+  --mermaid-accent: #d05a5a;
+  --mermaid-cluster: rgba(58, 75, 102, 0.35);
+  --mermaid-note-bg: rgba(224, 122, 122, 0.12);
+  --mermaid-note-border: rgba(224, 122, 122, 0.35);
+  --mermaid-note-text: #e07a7a;
+}
+
+/* ==========================================================================
    Maple
    ========================================================================== */
 .markdown-body[data-preview-theme="maple-light"] {
@@ -178,6 +264,16 @@ body[data-theme-pack-surface="obsidianite-bracket"] {
   --mp-h4: #4e7fb0;
   --mp-h5: #7e6aa8;
   --mp-h6: #4a9a9a;
+  --mermaid-text: #3b3a36;
+  --mermaid-panel: #ffffff;
+  --mermaid-panel-strong: #fbf8f3;
+  --mermaid-border: #e6ded2;
+  --mermaid-line: #8a877e;
+  --mermaid-accent: #5d9e6b;
+  --mermaid-cluster: rgba(93, 158, 107, 0.08);
+  --mermaid-note-bg: rgba(184, 107, 43, 0.12);
+  --mermaid-note-border: rgba(184, 107, 43, 0.35);
+  --mermaid-note-text: #b86b2b;
 }
 
 .markdown-body[data-preview-theme="maple-dark"] {
@@ -1025,242 +1121,154 @@ body[data-theme-pack-surface="obsidianite-bracket"] {
 }
 
 /* ==========================================================================
-   Fenced-code syntax tokens for dark themes
+   Tone-driven fenced-code tokens
    MarkEdit-preview applies GitHub's light highlight.js palette when the host
-   appearance is light, which leaves strings/comments nearly invisible on our
-   dark code backgrounds. Keep the token palette readable per theme.
+   appearance is light, which leaves strings/comments nearly invisible on a dark
+   preview theme. Every token color now comes from the --code-* variables, so the
+   palette follows .markdown-body[data-theme-pack-tone] instead of one theme.
    ========================================================================== */
-:is(
-  .markdown-body[data-preview-theme="maple-dark"],
-  .markdown-body[data-preview-theme^="obsidianite"]
-) pre code.hljs {
+.markdown-body[data-preview-theme] pre code.hljs {
   color: var(--code-fg);
   background: transparent;
 }
 
-:is(
-  .markdown-body[data-preview-theme="maple-dark"],
-  .markdown-body[data-preview-theme^="obsidianite"]
-) :is(.hljs-doctag, .hljs-keyword, .hljs-template-tag, .hljs-template-variable, .hljs-type, .hljs-variable.language_) {
+.markdown-body[data-preview-theme] :is(.hljs-doctag, .hljs-keyword, .hljs-template-tag, .hljs-template-variable, .hljs-type, .hljs-variable.language_) {
   color: var(--code-keyword);
 }
 
-:is(
-  .markdown-body[data-preview-theme="maple-dark"],
-  .markdown-body[data-preview-theme^="obsidianite"]
-) :is(.hljs-title, .hljs-title.class_, .hljs-title.class_.inherited__, .hljs-title.function_) {
+.markdown-body[data-preview-theme] :is(.hljs-title, .hljs-title.class_, .hljs-title.class_.inherited__, .hljs-title.function_) {
   color: var(--code-entity);
 }
 
-:is(
-  .markdown-body[data-preview-theme="maple-dark"],
-  .markdown-body[data-preview-theme^="obsidianite"]
-) :is(.hljs-attr, .hljs-attribute, .hljs-literal, .hljs-meta, .hljs-number, .hljs-operator, .hljs-variable, .hljs-selector-attr, .hljs-selector-class, .hljs-selector-id) {
+.markdown-body[data-preview-theme] :is(.hljs-attr, .hljs-attribute, .hljs-literal, .hljs-meta, .hljs-number, .hljs-operator, .hljs-variable, .hljs-selector-attr, .hljs-selector-class, .hljs-selector-id) {
   color: var(--code-constant);
 }
 
-:is(
-  .markdown-body[data-preview-theme="maple-dark"],
-  .markdown-body[data-preview-theme^="obsidianite"]
-) :is(.hljs-regexp, .hljs-string) {
+.markdown-body[data-preview-theme] :is(.hljs-regexp, .hljs-string) {
   color: var(--code-string);
 }
 
-:is(
-  .markdown-body[data-preview-theme="maple-dark"],
-  .markdown-body[data-preview-theme^="obsidianite"]
-) :is(.hljs-built_in, .hljs-symbol) {
+.markdown-body[data-preview-theme] :is(.hljs-built_in, .hljs-symbol) {
   color: var(--code-symbol);
 }
 
-:is(
-  .markdown-body[data-preview-theme="maple-dark"],
-  .markdown-body[data-preview-theme^="obsidianite"]
-) :is(.hljs-comment, .hljs-code, .hljs-formula) {
+.markdown-body[data-preview-theme] :is(.hljs-comment, .hljs-code, .hljs-formula) {
   color: var(--code-comment);
 }
 
-:is(
-  .markdown-body[data-preview-theme="maple-dark"],
-  .markdown-body[data-preview-theme^="obsidianite"]
-) :is(.hljs-name, .hljs-quote, .hljs-selector-tag, .hljs-selector-pseudo) {
+.markdown-body[data-preview-theme] :is(.hljs-name, .hljs-quote, .hljs-selector-tag, .hljs-selector-pseudo) {
   color: var(--code-tag);
 }
 
-:is(
-  .markdown-body[data-preview-theme="maple-dark"],
-  .markdown-body[data-preview-theme^="obsidianite"]
-) .hljs-subst {
+.markdown-body[data-preview-theme] .hljs-subst {
   color: var(--code-fg);
 }
 
-:is(
-  .markdown-body[data-preview-theme="maple-dark"],
-  .markdown-body[data-preview-theme^="obsidianite"]
-) .hljs-section {
+.markdown-body[data-preview-theme] .hljs-section {
   color: var(--code-section);
   font-weight: bold;
 }
 
-:is(
-  .markdown-body[data-preview-theme="maple-dark"],
-  .markdown-body[data-preview-theme^="obsidianite"]
-) .hljs-bullet {
+.markdown-body[data-preview-theme] .hljs-bullet {
   color: var(--code-bullet);
 }
 
-:is(
-  .markdown-body[data-preview-theme="maple-dark"],
-  .markdown-body[data-preview-theme^="obsidianite"]
-) .hljs-emphasis {
+.markdown-body[data-preview-theme] .hljs-emphasis {
   color: var(--code-fg);
   font-style: italic;
 }
 
-:is(
-  .markdown-body[data-preview-theme="maple-dark"],
-  .markdown-body[data-preview-theme^="obsidianite"]
-) .hljs-strong {
+.markdown-body[data-preview-theme] .hljs-strong {
   color: var(--code-fg);
   font-weight: bold;
 }
 
-:is(
-  .markdown-body[data-preview-theme="maple-dark"],
-  .markdown-body[data-preview-theme^="obsidianite"]
-) .hljs-addition {
-  color: #7ee787;
-  background-color: rgba(63, 185, 80, 0.15);
+.markdown-body[data-preview-theme] .hljs-addition {
+  color: var(--code-addition);
+  background-color: var(--code-addition-bg);
 }
 
-:is(
-  .markdown-body[data-preview-theme="maple-dark"],
-  .markdown-body[data-preview-theme^="obsidianite"]
-) .hljs-deletion {
-  color: #ffa198;
-  background-color: rgba(248, 81, 73, 0.15);
+.markdown-body[data-preview-theme] .hljs-deletion {
+  color: var(--code-deletion);
+  background-color: var(--code-deletion-bg);
 }
 
 /* ==========================================================================
-   Mermaid diagrams on dark themes
+   Mermaid diagrams that are darker than their palette
    MarkEdit-preview initializes mermaid from the OS appearance, so a light
    host gives diagrams dark text / white boxes even when the preview theme is
-   dark. Recolor the common diagram parts and keep note text readable.
+   dark. Only the dark tone is rewritten: on a light tone mermaid's own colors
+   already match the page, and recoloring would flatten classDef fills.
    ========================================================================== */
-:is(
-  .markdown-body[data-preview-theme="maple-dark"],
-  .markdown-body[data-preview-theme^="obsidianite"]
-) .mermaid svg {
+.markdown-body[data-preview-theme][data-theme-pack-tone="dark"] .mermaid svg {
   color: var(--mermaid-text) !important;
   background: transparent;
 }
 
-:is(
-  .markdown-body[data-preview-theme="maple-dark"],
-  .markdown-body[data-preview-theme^="obsidianite"]
-) .mermaid svg * {
+.markdown-body[data-preview-theme][data-theme-pack-tone="dark"] .mermaid svg * {
   filter: none !important;
 }
 
-:is(
-  .markdown-body[data-preview-theme="maple-dark"],
-  .markdown-body[data-preview-theme^="obsidianite"]
-) .mermaid svg :is(text, tspan, .messageText, .labelText, .labelText > tspan, .loopText, .loopText > tspan, .sectionTitle, .sectionTitle > tspan, .nodeLabel, .clusterLabel, .title) {
+.markdown-body[data-preview-theme][data-theme-pack-tone="dark"] .mermaid svg :is(text, tspan, .messageText, .labelText, .labelText > tspan, .loopText, .loopText > tspan, .sectionTitle, .sectionTitle > tspan, .nodeLabel, .clusterLabel, .title) {
   fill: var(--mermaid-text) !important;
   stroke: none !important;
   color: var(--mermaid-text) !important;
 }
 
-:is(
-  .markdown-body[data-preview-theme="maple-dark"],
-  .markdown-body[data-preview-theme^="obsidianite"]
-) .mermaid svg :is(.noteText, .noteText > tspan) {
+.markdown-body[data-preview-theme][data-theme-pack-tone="dark"] .mermaid svg :is(.noteText, .noteText > tspan) {
   fill: var(--mermaid-note-text) !important;
   color: var(--mermaid-note-text) !important;
 }
 
-:is(
-  .markdown-body[data-preview-theme="maple-dark"],
-  .markdown-body[data-preview-theme^="obsidianite"]
-) .mermaid svg :is(.actor, .actor-box rect, .actor-bottom, .actor-top, .labelBox, .activation0, .activation1, .activation2, .node rect, .node polygon, .node circle, g rect.rect) {
+.markdown-body[data-preview-theme][data-theme-pack-tone="dark"] .mermaid svg :is(.actor, .actor-box rect, .actor-bottom, .actor-top, .labelBox, .activation0, .activation1, .activation2, .node rect, .node polygon, .node circle, g rect.rect) {
   fill: var(--mermaid-panel-strong) !important;
   stroke: var(--mermaid-border) !important;
 }
 
-:is(
-  .markdown-body[data-preview-theme="maple-dark"],
-  .markdown-body[data-preview-theme^="obsidianite"]
-) .mermaid svg circle {
+.markdown-body[data-preview-theme][data-theme-pack-tone="dark"] .mermaid svg circle {
   fill: var(--mermaid-panel-strong) !important;
   stroke: var(--mermaid-border) !important;
 }
 
-:is(
-  .markdown-body[data-preview-theme="maple-dark"],
-  .markdown-body[data-preview-theme^="obsidianite"]
-) .mermaid svg :is(.edgeLabel rect, .labelBkg, .edgeLabelBackground) {
+.markdown-body[data-preview-theme][data-theme-pack-tone="dark"] .mermaid svg :is(.edgeLabel rect, .labelBkg, .edgeLabelBackground) {
   fill: var(--mermaid-panel) !important;
   stroke: var(--mermaid-border) !important;
 }
 
-:is(
-  .markdown-body[data-preview-theme="maple-dark"],
-  .markdown-body[data-preview-theme^="obsidianite"]
-) .mermaid svg .note {
+.markdown-body[data-preview-theme][data-theme-pack-tone="dark"] .mermaid svg .note {
   fill: var(--mermaid-note-bg) !important;
   stroke: var(--mermaid-note-border) !important;
 }
 
-:is(
-  .markdown-body[data-preview-theme="maple-dark"],
-  .markdown-body[data-preview-theme^="obsidianite"]
-) .mermaid svg .cluster rect {
+.markdown-body[data-preview-theme][data-theme-pack-tone="dark"] .mermaid svg .cluster rect {
   fill: var(--mermaid-cluster) !important;
   stroke: var(--mermaid-border) !important;
 }
 
-:is(
-  .markdown-body[data-preview-theme="maple-dark"],
-  .markdown-body[data-preview-theme^="obsidianite"]
-) .mermaid svg :is(.actor-line, .messageLine0, .messageLine1, .flowchart-link, .edgePaths path, .edgePath path) {
+.markdown-body[data-preview-theme][data-theme-pack-tone="dark"] .mermaid svg :is(.actor-line, .messageLine0, .messageLine1, .flowchart-link, .edgePaths path, .edgePath path) {
   stroke: var(--mermaid-line) !important;
 }
 
-:is(
-  .markdown-body[data-preview-theme="maple-dark"],
-  .markdown-body[data-preview-theme^="obsidianite"]
-) .mermaid svg line {
+.markdown-body[data-preview-theme][data-theme-pack-tone="dark"] .mermaid svg line {
   fill: transparent !important;
   stroke: var(--mermaid-line) !important;
 }
 
-:is(
-  .markdown-body[data-preview-theme="maple-dark"],
-  .markdown-body[data-preview-theme^="obsidianite"]
-) .mermaid svg .loopLine {
+.markdown-body[data-preview-theme][data-theme-pack-tone="dark"] .mermaid svg .loopLine {
   stroke: var(--mermaid-line) !important;
   fill: var(--mermaid-line) !important;
 }
 
-:is(
-  .markdown-body[data-preview-theme="maple-dark"],
-  .markdown-body[data-preview-theme^="obsidianite"]
-) .mermaid svg :is(.marker, .error-icon, [id$="-arrowhead"] path, [id$="-crosshead"] path) {
+.markdown-body[data-preview-theme][data-theme-pack-tone="dark"] .mermaid svg :is(.marker, .error-icon, [id$="-arrowhead"] path, [id$="-crosshead"] path) {
   fill: var(--mermaid-line) !important;
   stroke: var(--mermaid-line) !important;
 }
 
-:is(
-  .markdown-body[data-preview-theme="maple-dark"],
-  .markdown-body[data-preview-theme^="obsidianite"]
-) .mermaid svg :is(.edgeLabel, .edgeLabel p, .edgeLabel span, .edgeLabel div, .node foreignObject div) {
+.markdown-body[data-preview-theme][data-theme-pack-tone="dark"] .mermaid svg :is(.edgeLabel, .edgeLabel p, .edgeLabel span, .edgeLabel div, .node foreignObject div) {
   background: var(--mermaid-panel) !important;
   color: var(--mermaid-text) !important;
 }
 
-:is(
-  .markdown-body[data-preview-theme="maple-dark"],
-  .markdown-body[data-preview-theme^="obsidianite"]
-) .mermaid svg [id$="-sequencenumber"] {
+.markdown-body[data-preview-theme][data-theme-pack-tone="dark"] .mermaid svg [id$="-sequencenumber"] {
   fill: var(--mermaid-text) !important;
 }
