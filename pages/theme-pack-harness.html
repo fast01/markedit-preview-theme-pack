@@ -1140,6 +1140,17 @@
   min-height: 52px;
 }
 </style>
+<!-- MarkEdit-preview injects highlight.js with the palette chosen from the OS
+     appearance, so the harness loads the same pair: light always, dark only
+     when the browser itself is dark. That is exactly the mismatch the tone
+     palettes in the theme pack fix. -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@highlightjs/cdn-assets@11.9.0/styles/github.min.css">
+<link rel="stylesheet" media="(prefers-color-scheme: dark)" href="https://cdn.jsdelivr.net/npm/@highlightjs/cdn-assets@11.9.0/styles/github-dark.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/@highlightjs/cdn-assets@11.9.0/highlight.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/@highlightjs/cdn-assets@11.9.0/languages/python.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/@highlightjs/cdn-assets@11.9.0/languages/json.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/@highlightjs/cdn-assets@11.9.0/languages/bash.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/@highlightjs/cdn-assets@11.9.0/languages/diff.min.js"></script>
 <style>
   html, body { margin: 0; padding: 0; background: Canvas; color: CanvasText; color-scheme: light dark; }
   body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif; }
@@ -1156,6 +1167,11 @@
   .harness-bar button { font: inherit; padding: 3px 9px; border: 1px solid #c9ced8; border-radius: 5px; background: #fff; cursor: pointer; }
   .harness-bar button:hover { border-color: #8a282c; color: #8a282c; }
   .markdown-body { padding: 25px; margin: 0; }
+  .markdown-body .mermaid { display: block; overflow-x: auto; }
+  .markdown-body .mermaid.mermaid-unavailable {
+    border: 1px dashed #b31d28; padding: 8px; border-radius: 5px;
+    font: 12px/1.5 ui-monospace, Menlo, monospace; white-space: pre-wrap; opacity: .75;
+  }
   .harness-note { color: #777; font-size: 12px; }
   [hidden] { display: none !important; }
 </style>
@@ -1277,8 +1293,131 @@ console.log(foo(5));
     <li>Fourth numbered item</li>
   </ol>
 
+  <h2 id="rich-blocks">Rich blocks</h2>
+  <p>这一节专门用来检查 tone 驱动的派生配色：代码块 token、diff 增删行、mermaid 图表。行内 <code>inline code</code>、<strong>粗体</strong>、<em>斜体</em>、<del>删除线</del> 与 <a href="#stories">内部链接</a> 也一起放在这里<sup id="fnref-1"><a href="#fn-1">[1]</a></sup>。</p>
+
+  <h3 id="code-python">Python：字符串与注释是重点</h3>
+  <pre><code class="language-python"># 计算斐波那契数列：深色主题下这行注释必须还能读
+def fib(n: int) -&gt; str:
+    """返回第 n 项，docstring 也是字符串色。"""
+    memo = {0: 1, 1: 1}
+    if n in memo:
+        return memo[n]
+    return f"fib({n}) = {fib(n - 1) + fib(n - 2)}"  # tail comment
+
+
+class Cache(dict):
+    DEFAULT_TTL = 60.5
+    @property
+    def size(self):
+        return len(self)
+</code></pre>
+
+  <h3 id="code-diff">Diff：增删行底色</h3>
+  <pre><code class="language-diff">--- a/src/theme-pack-main.js
++++ b/src/theme-pack-main.js
+@@ -520,8 +563,11 @@
+ function applyThemeToPane(pane) {
+-  pane.style.colorScheme = isDarkTheme(currentTheme) ? "dark" : "light";
++  const tone = currentTone();
++  pane.setAttribute(TONE_ATTR, tone);
++  pane.style.colorScheme = tone;
+   syncSurface();
+ }
+</code></pre>
+
+  <h3 id="code-json">JSON / Bash</h3>
+  <pre><code class="language-json">{
+  "extension.markeditThemePack": {
+    "theme": "obsidianite",
+    "autoFold": true,
+    "autoFoldLevel": 3,
+    "debug": false
+  }
+}
+</code></pre>
+  <pre><code class="language-bash">cd markedit-preview-theme-pack   # 或你的本地目录名
+./scripts/install-theme-pack.sh
+python3 -m http.server 8931      # 然后打开 pages/theme-pack-harness.html
+</code></pre>
+
+  <h3 id="table-rich">表格：对齐、行内代码、长文本</h3>
+  <table>
+    <thead>
+      <tr><th>字段</th><th align="left">类型</th><th align="center">可空</th><th align="right">默认值</th><th>说明</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>uid</code></td><td align="left">int64</td><td align="center">否</td><td align="right">0</td><td>用户标识，主键的一部分，跨租户唯一。</td></tr>
+      <tr><td><code>token</code></td><td align="left">varchar(256)</td><td align="center">是</td><td align="right">NULL</td><td>访问令牌；轮换后旧令牌立即失效，不需要再查缓存。</td></tr>
+      <tr><td><code>expired_at</code></td><td align="left">datetime</td><td align="center">否</td><td align="right"><code>CURRENT_TIMESTAMP</code></td><td>过期时间，写入时按 UTC 存储，展示层再转成本地时区。</td></tr>
+      <tr><td><code>extra</code></td><td align="left">json</td><td align="center">是</td><td align="right">{}</td><td>预留字段，放 <code>{"source": "im"}</code> 这类小对象。</td></tr>
+    </tbody>
+  </table>
+
+  <h3 id="mermaid-sequence">Mermaid：时序图（autonumber + note）</h3>
+  <div class="mermaid">
+sequenceDiagram
+    autonumber
+    participant C as 客户端
+    participant S as 服务端
+    C-&gt;&gt;S: POST /login
+    Note over C,S: 便签文字在深色主题里不应刺眼
+    S--&gt;&gt;C: 200 OK (token)
+    C-&gt;&gt;S: GET /me (Bearer token)
+    S--&gt;&gt;C: 401 已过期
+  </div>
+
+  <h3 id="mermaid-flow">Mermaid：流程图（含 classDef 彩色节点）</h3>
+  <div class="mermaid">
+flowchart TD
+    A[读取 Markdown] --&gt; B{是否有主题?}
+    B --&gt;|是| C[套用主题 CSS]
+    B --&gt;|否| D[GitHub base]
+    C --&gt; E[解析 tone]
+    E --&gt; F[代码块 / mermaid 调色板]
+    D --&gt; F
+    classDef hot fill:#f96,stroke:#333,stroke-width:2px
+    classDef cool fill:#6cf,stroke:#234
+    class E,F hot
+    class D cool
+  </div>
+
+  <h3 id="mermaid-state">Mermaid：状态图与饼图</h3>
+  <div class="mermaid">
+stateDiagram-v2
+    [*] --&gt; 草稿
+    草稿 --&gt; 待审: 提交
+    待审 --&gt; 已发布: 通过
+    待审 --&gt; 草稿: 退回
+    已发布 --&gt; [*]
+  </div>
+  <div class="mermaid">
+pie showData
+    title 主题使用占比
+    "ITS" : 42
+    "Maple" : 31
+    "Obsidianite" : 27
+  </div>
+
+  <h3 id="quotes">引用、嵌套与折叠块</h3>
+  <blockquote>
+    <p>外层引用：深色主题下引用条与正文都要保持对比。</p>
+    <blockquote><p>嵌套引用，里面还有 <code>inline code</code>。</p></blockquote>
+  </blockquote>
+  <details>
+    <summary>展开看一段被折叠的内容</summary>
+    <p><code>details</code> 在预览里是原生 HTML，主题不应该把它撑坏。</p>
+  </details>
+
+  <h3 id="image">图片</h3>
+  <p>相对路径图片，用来验证导出时的 base64 内联链路：</p>
+  <p><img src="../previews/presets/theme-maple-light.png" alt="Maple Light 样张" width="520"></p>
+
+  <h2 id="footnote">脚注</h2>
+  <p id="fn-1">[1] 脚注回到<a href="#fnref-1">正文</a>。这一节本身也是 H2，用来验证长文档里的折叠层级。</p>
+
   <hr>
-  <p class="harness-note">Harness only. The real plugin runs in MarkEdit and styles `.markdown-body[data-preview-theme]`.</p>
+  <p class="harness-note">Harness only. The real plugin runs in MarkEdit and styles `.markdown-body[data-preview-theme]`. hljs / mermaid 走 jsDelivr，离线时代码块没有 token、mermaid 会显示原始源码。</p>
 </template>
 
 <article class="markdown-body overlay" id="pane"></article>
@@ -1289,7 +1428,35 @@ console.log(foo(5));
 
   function renderPane() {
     pane.replaceChildren(sample.content.cloneNode(true));
+    highlightPane();
+    renderMermaid();
   }
+
+  // MarkEdit-preview runs highlight.js over the rendered Markdown, so the token
+  // spans the theme pack recolors only exist after hljs has been applied.
+  function highlightPane() {
+    // hljs's UMD export is an object, not a function.
+    if (!window.hljs || typeof window.hljs.highlightElement !== "function") {
+      return;
+    }
+    pane.querySelectorAll("pre code[class*='language-']").forEach((block) => {
+      if (!block.classList.contains("hljs")) {
+        window.hljs.highlightElement(block);
+      }
+    });
+  }
+
+  function renderMermaid() {
+    if (typeof window.__harnessRenderMermaid === "function") {
+      window.__harnessRenderMermaid();
+    }
+  }
+
+  // highlight.js is deferred, and the mermaid module resolves on its own clock.
+  window.addEventListener("load", () => {
+    highlightPane();
+    renderMermaid();
+  });
 
   renderPane();
 
@@ -1426,6 +1593,111 @@ console.log(foo(5));
       }
     });
   });
+</script>
+<script type="module">
+  // Same contract as MarkEdit-preview's live loader: mermaid picks its theme
+  // from the OS appearance, never from the preview theme, so the harness can
+  // show what [data-theme-pack-mermaid-paint] is fixing.
+  const MERMAID_MODULE = "https://cdn.jsdelivr.net/npm/mermaid@12/dist/mermaid.esm.min.mjs";
+  let loading = null;
+  let repairTimer = null;
+
+  function loadMermaid() {
+    if (loading === null) {
+      loading = import(MERMAID_MODULE)
+        .then(({ default: mermaid }) => {
+          mermaid.initialize({
+            startOnLoad: false,
+            theme: window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "default",
+          });
+          return mermaid;
+        })
+        .catch((error) => {
+          console.warn("[harness] mermaid could not be loaded", error);
+          return null;
+        });
+    }
+    return loading;
+  }
+
+  function mermaidNodes() {
+    return [...document.querySelectorAll("#pane .mermaid")];
+  }
+
+  async function renderMermaid() {
+    const nodes = mermaidNodes().filter((node) => !node.hasAttribute("data-processed"));
+    if (nodes.length === 0) {
+      return;
+    }
+
+    const mermaid = await loadMermaid();
+    if (!mermaid) {
+      nodes.forEach((node) => node.classList.add("mermaid-unavailable"));
+      return;
+    }
+
+    // Heading sections start folded, and mermaid measures its labels with real
+    // layout, so unhide the ancestors while rendering and restore them after.
+    const reopened = [];
+    for (const node of nodes) {
+      node.dataset.src = node.dataset.src || node.textContent.trim();
+      for (let element = node.parentElement; element && element !== document.body; element = element.parentElement) {
+        if (element.hidden) {
+          element.hidden = false;
+          reopened.push(element);
+        }
+      }
+    }
+
+    try {
+      await mermaid.run({ nodes });
+    } catch (error) {
+      console.warn("[harness] mermaid failed to render", error);
+      nodes.forEach((node) => node.classList.add("mermaid-unavailable"));
+    } finally {
+      reopened.forEach((element) => {
+        element.hidden = true;
+      });
+    }
+  }
+
+  // A diagram rendered while its section was collapsed keeps that collapsed
+  // size. Once the section is visible again, put the source back and re-render.
+  function repairCollapsed() {
+    const stale = mermaidNodes().filter((node) => {
+      if (node.closest("[hidden]") || !node.querySelector("svg")) {
+        return false;
+      }
+      return node.getBoundingClientRect().height < 60;
+    });
+    if (stale.length === 0) {
+      return;
+    }
+    stale.forEach((node) => {
+      node.removeAttribute("data-processed");
+      node.classList.remove("mermaid-unavailable");
+      if (node.dataset.src) {
+        node.textContent = node.dataset.src;
+      }
+    });
+    renderMermaid();
+  }
+
+  function watchFolds() {
+    const pane = document.getElementById("pane");
+    if (!pane) {
+      return;
+    }
+    new MutationObserver(() => {
+      clearTimeout(repairTimer);
+      repairTimer = setTimeout(repairCollapsed, 250);
+    }).observe(pane, { attributes: true, attributeFilter: ["hidden"], childList: true, subtree: true });
+  }
+
+  window.__harnessRenderMermaid = renderMermaid;
+  window.__harnessRepairMermaid = repairCollapsed;
+  watchFolds();
+  renderMermaid();
 </script>
 </body>
 </html>

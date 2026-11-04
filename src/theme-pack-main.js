@@ -48,8 +48,10 @@
  *   .markdown-body[data-theme-pack-tone], and the derived palettes — fenced-code
  *   syntax tokens, mermaid diagrams, the ITS palette itself — read CSS custom
  *   properties keyed on it. Adding a theme therefore means adding a tone, not
- *   hand-picking token colors; mermaid is only recolored on the dark tone, so a
- *   light theme keeps mermaid's own diagram colors.
+ *   hand-picking token colors. Mermaid follows the same idea but needs one more
+ *   bit: MarkEdit-preview initializes it from the OS appearance, so the plugin
+ *   also sets [data-theme-pack-mermaid-paint] when the diagram palette and the
+ *   theme disagree (or whenever the theme is dark).
  *
  * Install / rebuild
  *   ./scripts/install-theme-pack.sh   (run from the project root)
@@ -63,12 +65,13 @@
  * CSS sources here. Do not hand-edit CSS in this file or in dist/.
  */
 
-const VERSION = "1.4.0";
+const VERSION = "1.5.0";
 const SETTINGS_KEY = "extension.markeditThemePack";
 const STYLE_ID = "markedit-theme-pack-style";
 const MARKER_CLASS = "theme-pack-decorated-marker";
 const THEME_ATTR = "data-preview-theme";
 const TONE_ATTR = "data-theme-pack-tone";
+const MERMAID_PAINT_ATTR = "data-theme-pack-mermaid-paint";
 const SURFACE_ATTR = "data-theme-pack-surface";
 const STATE_FILE = ".markedit-theme-pack.json";
 const FOLD_MENU_TITLE = "折叠层级";
@@ -207,6 +210,15 @@ function currentTone() {
   return resolveTone(currentTheme);
 }
 
+// MarkEdit-preview initializes mermaid from the OS appearance, never from the
+// preview theme, so a diagram can arrive in the wrong palette. Paint over it
+// when the theme is dark (its palette is part of the look) or when the host
+// disagrees with the theme; a light theme on a light host stays untouched, which
+// keeps the user's own classDef fills.
+function shouldPaintMermaid(tone) {
+  return tone === "dark" || systemIsDark();
+}
+
 function registerMenu() {
   if (typeof MarkEdit.addMainMenuItem !== "function") {
     return;
@@ -296,6 +308,9 @@ async function exportThemedHtml() {
     const tone = currentTone();
     wrapper.setAttribute(THEME_ATTR, currentTheme);
     wrapper.setAttribute(TONE_ATTR, tone);
+    if (shouldPaintMermaid(tone)) {
+      wrapper.setAttribute(MERMAID_PAINT_ATTR, "true");
+    }
     doc.documentElement.setAttribute(SURFACE_ATTR, currentTheme);
     doc.body.setAttribute(SURFACE_ATTR, currentTheme);
 
@@ -566,12 +581,17 @@ function applyThemeToPane(pane) {
   const tone = currentTone();
   pane.setAttribute(THEME_ATTR, currentTheme);
   pane.setAttribute(TONE_ATTR, tone);
+  if (shouldPaintMermaid(tone)) {
+    pane.setAttribute(MERMAID_PAINT_ATTR, "true");
+  } else {
+    pane.removeAttribute(MERMAID_PAINT_ATTR);
+  }
   pane.style.colorScheme = tone;
   syncSurface();
 }
 
-// ITS follows the system appearance, and its own palette is keyed on TONE_ATTR
-// rather than a media query, so flipping the OS appearance has to re-resolve it.
+// The palette keys on the resolved tone and on the host appearance, so flipping
+// the system appearance has to re-apply every theme, not only the auto ones.
 function watchSystemTone() {
   if (typeof window.matchMedia !== "function") {
     return;
@@ -579,9 +599,6 @@ function watchSystemTone() {
 
   const query = window.matchMedia("(prefers-color-scheme: dark)");
   const onChange = () => {
-    if (toneOf(currentTheme) !== "auto") {
-      return;
-    }
     const pane = previewPane || findPane();
     if (pane !== null) {
       applyThemeToPane(pane);

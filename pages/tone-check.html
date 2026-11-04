@@ -47,6 +47,7 @@
   每个面板写死一个 <code>data-theme-pack-tone</code>，用来在没有 MarkEdit 的情况下检查 tone 驱动的代码块与 mermaid 配色。
   真实 mermaid 图由 MarkEdit-preview 渲染；这里的 SVG 只是按 mermaid v12 的类名手写的替身。
   用法：<code>python3 -m http.server</code> 后打开 <code>/pages/tone-check.html</code>。
+  <label style="margin-left:12px"><input type="checkbox" id="host-toggle"> 模拟深色宿主（浅色主题会被重新上色，对应插件里的 <code>shouldPaintMermaid</code>）</label>
 </p>
 <div class="grid" id="grid"></div>
 <script>
@@ -66,21 +67,45 @@ const TABLE = `<table><thead><tr><th>字段</th><th>类型</th><th>说明</th></
 <tr><td>token</td><td>string</td><td>访问令牌</td></tr>
 <tr><td>expired_at</td><td>datetime</td><td>过期时间</td></tr></tbody></table>`;
 
-// Class names mirror what mermaid v12 emits for a sequence + flow diagram.
-const MERMAID = `<div class="mermaid"><svg viewBox="0 0 460 210" width="460" height="210">
-<g class="actors"><g class="actor" transform="translate(10,4)"><rect class="actor-box" width="110" height="34" rx="3"/><text class="actor" x="65" y="22" text-anchor="middle"><tspan>客户端</tspan></text></g>
-<g class="actor" transform="translate(330,4)"><rect class="actor-box" width="110" height="34" rx="3"/><text class="actor" x="65" y="22" text-anchor="middle"><tspan>服务端</tspan></text></g></g>
+// mermaid v12 with its default "neo" look emits an id-scoped stylesheet inside
+// the SVG (rect.actor + text.actor.actor-box + tspan labels), so the fixture
+// does the same: unpainted panels show those native colors, painted panels let
+// the pack's !important tone rules win.
+const MERMAID = `<div class="mermaid"><svg id="fx" viewBox="0 0 460 210" width="460" height="210">
+<style>
+  #fx .actor { fill: #ECECFF; stroke: #888888; stroke-width: 1; }
+  #fx text.actor > tspan { fill: #28253D; stroke: none; }
+  #fx .messageText, #fx .noteText, #fx .sequenceNumber { fill: #333333; }
+  #fx .actor-line, #fx .messageLine0, #fx .messageLine1, #fx .flowchart-link { stroke: #cccccc; }
+  #fx .note { fill: #fff5ad; stroke: #aaaa33; }
+  #fx .node rect { fill: #ECECFF; stroke: #888888; }
+  #fx .nodeLabel div { color: #28253D; }
+  #fx .edgeLabelBackground { fill: #e8e8e8; }
+  #fx .marker { fill: #333333; stroke: #333333; }
+  #fx circle { fill: #eeeeee; stroke: #999999; }
+</style>
+<g class="actors">
+  <rect class="actor actor-box" data-look="neo" x="10" y="4" width="110" height="34" rx="3"/>
+  <text class="actor actor-box" x="65" y="21" text-anchor="middle"><tspan x="65" dy="0">客户端</tspan></text>
+  <rect class="actor actor-box" data-look="neo" x="330" y="4" width="110" height="34" rx="3"/>
+  <text class="actor actor-box" x="385" y="21" text-anchor="middle"><tspan x="385" dy="0">服务端</tspan></text>
+</g>
 <line class="actor-line" x1="65" y1="38" x2="65" y2="200" stroke-width="1.5" stroke-dasharray="3,3"/>
 <line class="actor-line" x1="385" y1="38" x2="385" y2="200" stroke-width="1.5" stroke-dasharray="3,3"/>
 <g class="message0"><line class="messageLine0" x1="65" y1="80" x2="385" y2="80" stroke-width="2"/>
 <text class="messageText" x="225" y="75" text-anchor="middle">POST /login</text>
-<path class="marker" d="M0,0 L9,4.5 L0,9 z"/></g>
+<path class="marker arrowhead" d="M0,0 L9,4.5 L0,9 z"/></g>
 <g class="message1"><line class="messageLine1" x1="385" y1="120" x2="65" y2="120" stroke-width="2" stroke-dasharray="3,3"/>
 <text class="messageText" x="225" y="115" text-anchor="middle">token 已签发</text></g>
-<g class="note"><rect class="note" width="150" height="30" x="60" y="160"/><text class="noteText" x="135" y="180" text-anchor="middle"><tspan>便签文字</tspan></text></g>
-<circle class="sequence" cx="20" cy="80" r="9"/><text class="sequenceNumber" x="20" y="84" text-anchor="middle">1</text>
-<g class="flow"><g class="node"><rect class="basic" width="120" height="40" x="320" y="155"/><foreignObject class="nodeLabel" x="320" y="155" width="120" height="40"><div xmlns="http://www.w3.org/1999/xhtml">流程节点</div></foreignObject></g>
-<path class="flowchart-link" d="M320 175 L250 175" stroke-width="1.5"/><rect class="edgeLabelBackground" x="252" y="160" width="46" height="20"/><foreignObject class="edgeLabel" x="252" y="160" width="46" height="20"><div xmlns="http://www.w3.org/1999/xhtml" class="label"><span>条件</span></div></foreignObject></g>
+<g class="note"><rect class="note" data-look="neo" width="150" height="30" x="60" y="160"/>
+<text class="noteText" x="135" y="180" text-anchor="middle"><tspan>便签文字</tspan></text></g>
+<circle class="sequenceNumber" cx="20" cy="80" r="9"/>
+<text class="sequenceNumber" x="20" y="84" text-anchor="middle">1</text>
+<g class="flow"><g class="node"><rect class="basic" data-look="neo" width="120" height="40" x="320" y="155"/>
+<foreignObject class="nodeLabel" x="320" y="155" width="120" height="40"><div xmlns="http://www.w3.org/1999/xhtml">流程节点</div></foreignObject></g>
+<path class="flowchart-link" d="M320 175 L250 175" stroke-width="1.5"/>
+<rect class="edgeLabelBackground" x="252" y="160" width="46" height="20"/>
+<foreignObject class="edgeLabel" x="252" y="160" width="46" height="20"><div xmlns="http://www.w3.org/1999/xhtml" class="label"><span>条件</span></div></foreignObject></g>
 </svg></div>`;
 
 const PANES = [
@@ -113,6 +138,7 @@ async function main() {
     pane.className = "markdown-body";
     pane.setAttribute("data-preview-theme", theme);
     pane.setAttribute("data-theme-pack-tone", tone);
+    paintMermaid(pane, tone);
     pane.innerHTML = `<h2>标题 Heading</h2><p>正文文字，包含 <code>inline code</code> 与 <a href="#">链接</a>。</p>`
       + CODE + TABLE + MERMAID;
 
@@ -122,6 +148,34 @@ async function main() {
 
   document.title = "Theme Pack tone check — ready";
 }
+
+// Mirrors shouldPaintMermaid() in the plugin: dark themes always get the theme
+// palette, light themes only when the host appearance disagrees with them.
+function paintMermaid(pane, tone) {
+  if (tone === "dark" || hostIsDark()) {
+    pane.setAttribute("data-theme-pack-mermaid-paint", "true");
+  } else {
+    pane.removeAttribute("data-theme-pack-mermaid-paint");
+  }
+}
+
+function hostIsDark() {
+  return document.body.dataset.hostAppearance === "dark";
+}
+
+function repaint() {
+  document.querySelectorAll("#grid .markdown-body").forEach((pane) => {
+    paintMermaid(pane, pane.getAttribute("data-theme-pack-tone"));
+  });
+}
+
+document.addEventListener("click", (event) => {
+  if (event.target?.id !== "host-toggle") {
+    return;
+  }
+  document.body.dataset.hostAppearance = event.target.checked ? "dark" : "light";
+  repaint();
+});
 
 main().catch((error) => {
   document.title = "tone check failed: " + error.message;

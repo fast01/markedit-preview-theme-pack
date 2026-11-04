@@ -1194,81 +1194,82 @@ body[data-theme-pack-surface="obsidianite-bracket"] {
 }
 
 /* ==========================================================================
-   Mermaid diagrams that are darker than their palette
-   MarkEdit-preview initializes mermaid from the OS appearance, so a light
-   host gives diagrams dark text / white boxes even when the preview theme is
-   dark. Only the dark tone is rewritten: on a light tone mermaid's own colors
-   already match the page, and recoloring would flatten classDef fills.
+   Mermaid diagrams that disagree with their theme
+   MarkEdit-preview initializes mermaid from the OS appearance, so the diagram
+   palette follows the host, never the preview theme. The plugin sets
+   [data-theme-pack-mermaid-paint] when the two disagree, or whenever the theme
+   is dark so the diagrams keep the theme's own colors. A light theme on a light
+   host is left alone, which keeps classDef fills intact.
    ========================================================================== */
-.markdown-body[data-preview-theme][data-theme-pack-tone="dark"] .mermaid svg {
+.markdown-body[data-preview-theme][data-theme-pack-mermaid-paint] .mermaid svg {
   color: var(--mermaid-text) !important;
   background: transparent;
 }
 
-.markdown-body[data-preview-theme][data-theme-pack-tone="dark"] .mermaid svg * {
+.markdown-body[data-preview-theme][data-theme-pack-mermaid-paint] .mermaid svg * {
   filter: none !important;
 }
 
-.markdown-body[data-preview-theme][data-theme-pack-tone="dark"] .mermaid svg :is(text, tspan, .messageText, .labelText, .labelText > tspan, .loopText, .loopText > tspan, .sectionTitle, .sectionTitle > tspan, .nodeLabel, .clusterLabel, .title) {
+.markdown-body[data-preview-theme][data-theme-pack-mermaid-paint] .mermaid svg :is(text, tspan, .messageText, .labelText, .labelText > tspan, .loopText, .loopText > tspan, .sectionTitle, .sectionTitle > tspan, .nodeLabel, .clusterLabel, .title) {
   fill: var(--mermaid-text) !important;
   stroke: none !important;
   color: var(--mermaid-text) !important;
 }
 
-.markdown-body[data-preview-theme][data-theme-pack-tone="dark"] .mermaid svg :is(.noteText, .noteText > tspan) {
+.markdown-body[data-preview-theme][data-theme-pack-mermaid-paint] .mermaid svg :is(.noteText, .noteText > tspan) {
   fill: var(--mermaid-note-text) !important;
   color: var(--mermaid-note-text) !important;
 }
 
-.markdown-body[data-preview-theme][data-theme-pack-tone="dark"] .mermaid svg :is(.actor, .actor-box rect, .actor-bottom, .actor-top, .labelBox, .activation0, .activation1, .activation2, .node rect, .node polygon, .node circle, g rect.rect) {
+.markdown-body[data-preview-theme][data-theme-pack-mermaid-paint] .mermaid svg :is(.actor, .actor-box rect, .actor-bottom, .actor-top, .labelBox, .activation0, .activation1, .activation2, .node rect, .node polygon, .node circle, g rect.rect) {
   fill: var(--mermaid-panel-strong) !important;
   stroke: var(--mermaid-border) !important;
 }
 
-.markdown-body[data-preview-theme][data-theme-pack-tone="dark"] .mermaid svg circle {
+.markdown-body[data-preview-theme][data-theme-pack-mermaid-paint] .mermaid svg circle {
   fill: var(--mermaid-panel-strong) !important;
   stroke: var(--mermaid-border) !important;
 }
 
-.markdown-body[data-preview-theme][data-theme-pack-tone="dark"] .mermaid svg :is(.edgeLabel rect, .labelBkg, .edgeLabelBackground) {
+.markdown-body[data-preview-theme][data-theme-pack-mermaid-paint] .mermaid svg :is(.edgeLabel rect, .labelBkg, .edgeLabelBackground) {
   fill: var(--mermaid-panel) !important;
   stroke: var(--mermaid-border) !important;
 }
 
-.markdown-body[data-preview-theme][data-theme-pack-tone="dark"] .mermaid svg .note {
+.markdown-body[data-preview-theme][data-theme-pack-mermaid-paint] .mermaid svg .note {
   fill: var(--mermaid-note-bg) !important;
   stroke: var(--mermaid-note-border) !important;
 }
 
-.markdown-body[data-preview-theme][data-theme-pack-tone="dark"] .mermaid svg .cluster rect {
+.markdown-body[data-preview-theme][data-theme-pack-mermaid-paint] .mermaid svg .cluster rect {
   fill: var(--mermaid-cluster) !important;
   stroke: var(--mermaid-border) !important;
 }
 
-.markdown-body[data-preview-theme][data-theme-pack-tone="dark"] .mermaid svg :is(.actor-line, .messageLine0, .messageLine1, .flowchart-link, .edgePaths path, .edgePath path) {
+.markdown-body[data-preview-theme][data-theme-pack-mermaid-paint] .mermaid svg :is(.actor-line, .messageLine0, .messageLine1, .flowchart-link, .edgePaths path, .edgePath path) {
   stroke: var(--mermaid-line) !important;
 }
 
-.markdown-body[data-preview-theme][data-theme-pack-tone="dark"] .mermaid svg line {
+.markdown-body[data-preview-theme][data-theme-pack-mermaid-paint] .mermaid svg line {
   fill: transparent !important;
   stroke: var(--mermaid-line) !important;
 }
 
-.markdown-body[data-preview-theme][data-theme-pack-tone="dark"] .mermaid svg .loopLine {
+.markdown-body[data-preview-theme][data-theme-pack-mermaid-paint] .mermaid svg .loopLine {
   stroke: var(--mermaid-line) !important;
   fill: var(--mermaid-line) !important;
 }
 
-.markdown-body[data-preview-theme][data-theme-pack-tone="dark"] .mermaid svg :is(.marker, .error-icon, [id$="-arrowhead"] path, [id$="-crosshead"] path) {
+.markdown-body[data-preview-theme][data-theme-pack-mermaid-paint] .mermaid svg :is(.marker, .error-icon, [id$="-arrowhead"] path, [id$="-crosshead"] path) {
   fill: var(--mermaid-line) !important;
   stroke: var(--mermaid-line) !important;
 }
 
-.markdown-body[data-preview-theme][data-theme-pack-tone="dark"] .mermaid svg :is(.edgeLabel, .edgeLabel p, .edgeLabel span, .edgeLabel div, .node foreignObject div) {
+.markdown-body[data-preview-theme][data-theme-pack-mermaid-paint] .mermaid svg :is(.edgeLabel, .edgeLabel p, .edgeLabel span, .edgeLabel div, .node foreignObject div) {
   background: var(--mermaid-panel) !important;
   color: var(--mermaid-text) !important;
 }
 
-.markdown-body[data-preview-theme][data-theme-pack-tone="dark"] .mermaid svg [id$="-sequencenumber"] {
+.markdown-body[data-preview-theme][data-theme-pack-mermaid-paint] .mermaid svg [id$="-sequencenumber"] {
   fill: var(--mermaid-text) !important;
 }

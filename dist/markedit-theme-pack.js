@@ -48,8 +48,10 @@
  *   .markdown-body[data-theme-pack-tone], and the derived palettes — fenced-code
  *   syntax tokens, mermaid diagrams, the ITS palette itself — read CSS custom
  *   properties keyed on it. Adding a theme therefore means adding a tone, not
- *   hand-picking token colors; mermaid is only recolored on the dark tone, so a
- *   light theme keeps mermaid's own diagram colors.
+ *   hand-picking token colors. Mermaid follows the same idea but needs one more
+ *   bit: MarkEdit-preview initializes it from the OS appearance, so the plugin
+ *   also sets [data-theme-pack-mermaid-paint] when the diagram palette and the
+ *   theme disagree (or whenever the theme is dark).
  *
  * Install / rebuild
  *   ./scripts/install-theme-pack.sh   (run from the project root)
@@ -1606,92 +1608,94 @@ body[data-theme-pack-surface="obsidianite-bracket"] {
 }
 
 /* ==========================================================================
-   Mermaid diagrams that are darker than their palette
-   MarkEdit-preview initializes mermaid from the OS appearance, so a light
-   host gives diagrams dark text / white boxes even when the preview theme is
-   dark. Only the dark tone is rewritten: on a light tone mermaid's own colors
-   already match the page, and recoloring would flatten classDef fills.
+   Mermaid diagrams that disagree with their theme
+   MarkEdit-preview initializes mermaid from the OS appearance, so the diagram
+   palette follows the host, never the preview theme. The plugin sets
+   [data-theme-pack-mermaid-paint] when the two disagree, or whenever the theme
+   is dark so the diagrams keep the theme's own colors. A light theme on a light
+   host is left alone, which keeps classDef fills intact.
    ========================================================================== */
-.markdown-body[data-preview-theme][data-theme-pack-tone="dark"] .mermaid svg {
+.markdown-body[data-preview-theme][data-theme-pack-mermaid-paint] .mermaid svg {
   color: var(--mermaid-text) !important;
   background: transparent;
 }
 
-.markdown-body[data-preview-theme][data-theme-pack-tone="dark"] .mermaid svg * {
+.markdown-body[data-preview-theme][data-theme-pack-mermaid-paint] .mermaid svg * {
   filter: none !important;
 }
 
-.markdown-body[data-preview-theme][data-theme-pack-tone="dark"] .mermaid svg :is(text, tspan, .messageText, .labelText, .labelText > tspan, .loopText, .loopText > tspan, .sectionTitle, .sectionTitle > tspan, .nodeLabel, .clusterLabel, .title) {
+.markdown-body[data-preview-theme][data-theme-pack-mermaid-paint] .mermaid svg :is(text, tspan, .messageText, .labelText, .labelText > tspan, .loopText, .loopText > tspan, .sectionTitle, .sectionTitle > tspan, .nodeLabel, .clusterLabel, .title) {
   fill: var(--mermaid-text) !important;
   stroke: none !important;
   color: var(--mermaid-text) !important;
 }
 
-.markdown-body[data-preview-theme][data-theme-pack-tone="dark"] .mermaid svg :is(.noteText, .noteText > tspan) {
+.markdown-body[data-preview-theme][data-theme-pack-mermaid-paint] .mermaid svg :is(.noteText, .noteText > tspan) {
   fill: var(--mermaid-note-text) !important;
   color: var(--mermaid-note-text) !important;
 }
 
-.markdown-body[data-preview-theme][data-theme-pack-tone="dark"] .mermaid svg :is(.actor, .actor-box rect, .actor-bottom, .actor-top, .labelBox, .activation0, .activation1, .activation2, .node rect, .node polygon, .node circle, g rect.rect) {
+.markdown-body[data-preview-theme][data-theme-pack-mermaid-paint] .mermaid svg :is(.actor, .actor-box rect, .actor-bottom, .actor-top, .labelBox, .activation0, .activation1, .activation2, .node rect, .node polygon, .node circle, g rect.rect) {
   fill: var(--mermaid-panel-strong) !important;
   stroke: var(--mermaid-border) !important;
 }
 
-.markdown-body[data-preview-theme][data-theme-pack-tone="dark"] .mermaid svg circle {
+.markdown-body[data-preview-theme][data-theme-pack-mermaid-paint] .mermaid svg circle {
   fill: var(--mermaid-panel-strong) !important;
   stroke: var(--mermaid-border) !important;
 }
 
-.markdown-body[data-preview-theme][data-theme-pack-tone="dark"] .mermaid svg :is(.edgeLabel rect, .labelBkg, .edgeLabelBackground) {
+.markdown-body[data-preview-theme][data-theme-pack-mermaid-paint] .mermaid svg :is(.edgeLabel rect, .labelBkg, .edgeLabelBackground) {
   fill: var(--mermaid-panel) !important;
   stroke: var(--mermaid-border) !important;
 }
 
-.markdown-body[data-preview-theme][data-theme-pack-tone="dark"] .mermaid svg .note {
+.markdown-body[data-preview-theme][data-theme-pack-mermaid-paint] .mermaid svg .note {
   fill: var(--mermaid-note-bg) !important;
   stroke: var(--mermaid-note-border) !important;
 }
 
-.markdown-body[data-preview-theme][data-theme-pack-tone="dark"] .mermaid svg .cluster rect {
+.markdown-body[data-preview-theme][data-theme-pack-mermaid-paint] .mermaid svg .cluster rect {
   fill: var(--mermaid-cluster) !important;
   stroke: var(--mermaid-border) !important;
 }
 
-.markdown-body[data-preview-theme][data-theme-pack-tone="dark"] .mermaid svg :is(.actor-line, .messageLine0, .messageLine1, .flowchart-link, .edgePaths path, .edgePath path) {
+.markdown-body[data-preview-theme][data-theme-pack-mermaid-paint] .mermaid svg :is(.actor-line, .messageLine0, .messageLine1, .flowchart-link, .edgePaths path, .edgePath path) {
   stroke: var(--mermaid-line) !important;
 }
 
-.markdown-body[data-preview-theme][data-theme-pack-tone="dark"] .mermaid svg line {
+.markdown-body[data-preview-theme][data-theme-pack-mermaid-paint] .mermaid svg line {
   fill: transparent !important;
   stroke: var(--mermaid-line) !important;
 }
 
-.markdown-body[data-preview-theme][data-theme-pack-tone="dark"] .mermaid svg .loopLine {
+.markdown-body[data-preview-theme][data-theme-pack-mermaid-paint] .mermaid svg .loopLine {
   stroke: var(--mermaid-line) !important;
   fill: var(--mermaid-line) !important;
 }
 
-.markdown-body[data-preview-theme][data-theme-pack-tone="dark"] .mermaid svg :is(.marker, .error-icon, [id$="-arrowhead"] path, [id$="-crosshead"] path) {
+.markdown-body[data-preview-theme][data-theme-pack-mermaid-paint] .mermaid svg :is(.marker, .error-icon, [id$="-arrowhead"] path, [id$="-crosshead"] path) {
   fill: var(--mermaid-line) !important;
   stroke: var(--mermaid-line) !important;
 }
 
-.markdown-body[data-preview-theme][data-theme-pack-tone="dark"] .mermaid svg :is(.edgeLabel, .edgeLabel p, .edgeLabel span, .edgeLabel div, .node foreignObject div) {
+.markdown-body[data-preview-theme][data-theme-pack-mermaid-paint] .mermaid svg :is(.edgeLabel, .edgeLabel p, .edgeLabel span, .edgeLabel div, .node foreignObject div) {
   background: var(--mermaid-panel) !important;
   color: var(--mermaid-text) !important;
 }
 
-.markdown-body[data-preview-theme][data-theme-pack-tone="dark"] .mermaid svg [id$="-sequencenumber"] {
+.markdown-body[data-preview-theme][data-theme-pack-mermaid-paint] .mermaid svg [id$="-sequencenumber"] {
   fill: var(--mermaid-text) !important;
 }
 `;
 
-const VERSION = "1.4.0";
+const VERSION = "1.5.0";
 const SETTINGS_KEY = "extension.markeditThemePack";
 const STYLE_ID = "markedit-theme-pack-style";
 const MARKER_CLASS = "theme-pack-decorated-marker";
 const THEME_ATTR = "data-preview-theme";
 const TONE_ATTR = "data-theme-pack-tone";
+const MERMAID_PAINT_ATTR = "data-theme-pack-mermaid-paint";
 const SURFACE_ATTR = "data-theme-pack-surface";
 const STATE_FILE = ".markedit-theme-pack.json";
 const FOLD_MENU_TITLE = "折叠层级";
@@ -1830,6 +1834,15 @@ function currentTone() {
   return resolveTone(currentTheme);
 }
 
+// MarkEdit-preview initializes mermaid from the OS appearance, never from the
+// preview theme, so a diagram can arrive in the wrong palette. Paint over it
+// when the theme is dark (its palette is part of the look) or when the host
+// disagrees with the theme; a light theme on a light host stays untouched, which
+// keeps the user's own classDef fills.
+function shouldPaintMermaid(tone) {
+  return tone === "dark" || systemIsDark();
+}
+
 function registerMenu() {
   if (typeof MarkEdit.addMainMenuItem !== "function") {
     return;
@@ -1919,6 +1932,9 @@ async function exportThemedHtml() {
     const tone = currentTone();
     wrapper.setAttribute(THEME_ATTR, currentTheme);
     wrapper.setAttribute(TONE_ATTR, tone);
+    if (shouldPaintMermaid(tone)) {
+      wrapper.setAttribute(MERMAID_PAINT_ATTR, "true");
+    }
     doc.documentElement.setAttribute(SURFACE_ATTR, currentTheme);
     doc.body.setAttribute(SURFACE_ATTR, currentTheme);
 
@@ -2189,12 +2205,17 @@ function applyThemeToPane(pane) {
   const tone = currentTone();
   pane.setAttribute(THEME_ATTR, currentTheme);
   pane.setAttribute(TONE_ATTR, tone);
+  if (shouldPaintMermaid(tone)) {
+    pane.setAttribute(MERMAID_PAINT_ATTR, "true");
+  } else {
+    pane.removeAttribute(MERMAID_PAINT_ATTR);
+  }
   pane.style.colorScheme = tone;
   syncSurface();
 }
 
-// ITS follows the system appearance, and its own palette is keyed on TONE_ATTR
-// rather than a media query, so flipping the OS appearance has to re-resolve it.
+// The palette keys on the resolved tone and on the host appearance, so flipping
+// the system appearance has to re-apply every theme, not only the auto ones.
 function watchSystemTone() {
   if (typeof window.matchMedia !== "function") {
     return;
@@ -2202,9 +2223,6 @@ function watchSystemTone() {
 
   const query = window.matchMedia("(prefers-color-scheme: dark)");
   const onChange = () => {
-    if (toneOf(currentTheme) !== "auto") {
-      return;
-    }
     const pane = previewPane || findPane();
     if (pane !== null) {
       applyThemeToPane(pane);
