@@ -97,10 +97,13 @@ const CODE = `<pre><code class="hljs language-python"><span class="hljs-comment"
 <span class="hljs-addition">+ added line</span>
 <span class="hljs-deletion">- removed line</span></code></pre>`;
 
-const TABLE = `<table><thead><tr><th>字段</th><th>类型</th><th>说明</th></tr></thead>
-<tbody><tr><td><code>uid</code></td><td>int64</td><td>用户标识</td></tr>
-<tr><td>token</td><td>string</td><td>访问令牌</td></tr>
-<tr><td>expired_at</td><td>datetime</td><td>过期时间</td></tr></tbody></table>`;
+// 14 rows so the sticky header can actually be seen while scrolling.
+const TABLE = `<table><thead><tr><th>字段</th><th>类型</th><th>说明</th></tr></thead><tbody>${
+  Array.from({ length: 14 }, (_, index) => {
+    const n = index + 1;
+    return `<tr><td><code>column_${String(n).padStart(2, "0")}</code></td><td>${["int64", "string", "datetime", "json"][index % 4]}</td><td>第 ${n} 行：滚动时表头应停在面板顶部。</td></tr>`;
+  }).join("")
+}</tbody></table>`;
 
 // mermaid v12 with its default "neo" look emits an id-scoped stylesheet inside
 // the SVG (rect.actor + text.actor > tspan), so the fixture keeps its native
@@ -161,6 +164,9 @@ async function main() {
     pane.className = "markdown-body";
     pane.setAttribute("data-preview-theme", theme);
     pane.setAttribute("data-theme-pack-tone", tone);
+    // Same switch the plugin writes from settings.stickyTableHeader, so the
+    // long table below can be scrolled inside each panel.
+    pane.setAttribute("data-theme-pack-table-sticky", "true");
     paintMermaid(pane, tone);
     pane.innerHTML = `<h2>标题 Heading</h2><p>正文文字，包含 <code>inline code</code> 与 <a href="#">链接</a>。</p>`
       + CODE + TABLE + MERMAID;

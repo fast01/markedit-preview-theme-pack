@@ -6,6 +6,9 @@
  *
  * Selection
  *   Extensions (扩展功能) > Preview Theme > pick a theme.
+ *   The first entry, 默认（不套用）, removes every pack attribute so the
+ *   preview is styled only by MarkEdit-preview's GitHub base and by any other
+ *   installed theme extension; folding keeps working in that mode.
  *   The choice is remembered in Documents/.markedit-theme-pack.json.
  *   settings.json can set the initial theme when that state file is absent:
  *
@@ -14,11 +17,20 @@
  *       "autoFold": true,
  *       "autoFoldLevel": 3,
  *       "listFolding": true,
+ *       "stickyTableHeader": true,
  *       "debug": false
  *     }
  *
  *   autoFold/autoFoldLevel apply to the ITS theme only (matching the original
  *   ITS plugin). List folding applies to every theme.
+ *
+ * Sticky table headers
+ *   Long tables keep their header row while the preview scrolls. This is
+ *   behavior, not theming: it is keyed on its own attribute
+ *   [data-theme-pack-table-sticky] and takes its colors from MarkEdit-preview's
+ *   GitHub variables, so it also works in 默认（不套用） mode and under other
+ *   themes. Set "stickyTableHeader": false in settings.json to switch it off
+ *   (restart MarkEdit afterwards).
  *
  * Fold Levels
  *   Extensions > 折叠层级: 全部折叠 / 全部打开 / 折叠到 H1..H6.
@@ -65,13 +77,14 @@
  * CSS sources here. Do not hand-edit CSS in this file or in dist/.
  */
 
-const VERSION = "1.5.1";
+const VERSION = "1.6.0";
 const SETTINGS_KEY = "extension.markeditThemePack";
 const STYLE_ID = "markedit-theme-pack-style";
 const MARKER_CLASS = "theme-pack-decorated-marker";
 const THEME_ATTR = "data-preview-theme";
 const TONE_ATTR = "data-theme-pack-tone";
 const MERMAID_PAINT_ATTR = "data-theme-pack-mermaid-paint";
+const STICKY_ATTR = "data-theme-pack-table-sticky";
 const SURFACE_ATTR = "data-theme-pack-surface";
 const STATE_FILE = ".markedit-theme-pack.json";
 const FOLD_MENU_TITLE = "折叠层级";
@@ -80,13 +93,17 @@ const FOLD_MENU_TITLE = "折叠层级";
 // which is what ITS does; the resolved value is written to TONE_ATTR and every
 // derived palette (code tokens, mermaid) reads its colors from it, so a new
 // theme only needs a tone, not a hand-written token list.
+// "none" is not a theme: it strips every pack attribute so MarkEdit-preview's
+// GitHub base — and any other installed theme extension — styles the preview.
 const THEMES = [
+  { id: "none", label: "默认（不套用）", tone: "auto" },
   { id: "its", label: "ITS", tone: "auto" },
   { id: "maple-light", label: "Maple Light", tone: "light" },
   { id: "maple-dark", label: "Maple Dark", tone: "dark" },
   { id: "obsidianite", label: "Obsidianite", tone: "dark" },
   { id: "obsidianite-bracket", label: "Obsidianite Brackets", tone: "dark" },
 ];
+const NO_THEME = "none";
 const THEME_IDS = new Set(THEMES.map((theme) => theme.id));
 const TONE_BY_THEME = new Map(THEMES.map((theme) => [theme.id, theme.tone]));
 const DEFAULT_THEME = "its";
@@ -103,6 +120,7 @@ const DEFAULTS = {
   autoFold: true,
   autoFoldLevel: 3,
   listFolding: true,
+  stickyTableHeader: true,
   debug: false,
 };
 
@@ -114,6 +132,7 @@ settings.autoFoldLevel = Number.isFinite(configuredFoldLevel) && configuredFoldL
   ? configuredFoldLevel
   : DEFAULTS.autoFoldLevel;
 settings.listFolding = settings.listFolding !== false;
+settings.stickyTableHeader = settings.stickyTableHeader !== false;
 settings.debug = settings.debug === true;
 
 let currentTheme = settings.theme;
@@ -221,6 +240,14 @@ function shouldPaintMermaid(tone) {
   return tone === "dark";
 }
 
+function themeMenuItem(theme) {
+  return {
+    title: theme.label,
+    action: () => selectTheme(theme.id),
+    state: () => ({ isSelected: currentTheme === theme.id }),
+  };
+}
+
 function registerMenu() {
   if (typeof MarkEdit.addMainMenuItem !== "function") {
     return;
@@ -230,11 +257,10 @@ function registerMenu() {
     {
       title: "Preview Theme",
       children: [
-        ...THEMES.map((theme) => ({
-          title: theme.label,
-          action: () => selectTheme(theme.id),
-          state: () => ({ isSelected: currentTheme === theme.id }),
-        })),
+        // The "不套用" entry first, then the five built-in themes.
+        themeMenuItem(THEMES[0]),
+        { separator: true },
+        ...THEMES.slice(1).map(themeMenuItem),
         { separator: true },
         {
           title: "导出当前主题 HTML…",
@@ -307,14 +333,21 @@ async function exportThemedHtml() {
       throw new Error("导出的 HTML 中找不到 .markdown-body。");
     }
 
-    const tone = currentTone();
-    wrapper.setAttribute(THEME_ATTR, currentTheme);
-    wrapper.setAttribute(TONE_ATTR, tone);
-    if (shouldPaintMermaid(tone)) {
-      wrapper.setAttribute(MERMAID_PAINT_ATTR, "true");
+    // The exported SVG/CSS palette has to match what the user was looking at, so
+    // the attributes are copied exactly as the live pane has them.
+    const tone = currentTheme === NO_THEME ? (systemIsDark() ? "dark" : "light") : currentTone();
+    if (currentTheme !== NO_THEME) {
+      wrapper.setAttribute(THEME_ATTR, currentTheme);
+      wrapper.setAttribute(TONE_ATTR, tone);
+      if (shouldPaintMermaid(tone)) {
+        wrapper.setAttribute(MERMAID_PAINT_ATTR, "true");
+      }
+      doc.documentElement.setAttribute(SURFACE_ATTR, currentTheme);
+      doc.body.setAttribute(SURFACE_ATTR, currentTheme);
     }
-    doc.documentElement.setAttribute(SURFACE_ATTR, currentTheme);
-    doc.body.setAttribute(SURFACE_ATTR, currentTheme);
+    if (settings.stickyTableHeader) {
+      wrapper.setAttribute(STICKY_ATTR, "true");
+    }
 
     const info = typeof MarkEdit.getFileInfo === "function"
       ? await MarkEdit.getFileInfo()
@@ -328,7 +361,9 @@ async function exportThemedHtml() {
     doc.body.appendChild(style);
 
     const finalHtml = "<!doctype html>\n" + doc.documentElement.outerHTML;
-    const fileName = exportFileBaseName(info?.filePath) + "-" + currentTheme + ".html";
+    const fileName = exportFileBaseName(info?.filePath)
+      + "-" + (currentTheme === NO_THEME ? "default" : currentTheme)
+      + ".html";
 
     if (typeof MarkEdit.showSavePanel !== "function") {
       await navigator.clipboard.writeText(finalHtml);
@@ -353,7 +388,8 @@ function exportBackground(pane, tone) {
 
   const backgrounds = THEME_BACKGROUNDS[currentTheme];
   if (!backgrounds) {
-    return "#ffffff";
+    // "不套用" has no page color of its own: fall back to the host canvas.
+    return systemIsDark() ? "#0d1117" : "#ffffff";
   }
   return tone === "dark" ? backgrounds.dark : backgrounds.light;
 }
@@ -580,16 +616,39 @@ function findPane() {
 }
 
 function applyThemeToPane(pane) {
-  const tone = currentTone();
-  pane.setAttribute(THEME_ATTR, currentTheme);
-  pane.setAttribute(TONE_ATTR, tone);
-  if (shouldPaintMermaid(tone)) {
-    pane.setAttribute(MERMAID_PAINT_ATTR, "true");
-  } else {
+  if (currentTheme === NO_THEME) {
+    // Every pack rule is scoped to [data-preview-theme], so dropping the
+    // attributes hands the preview back to GitHub base / other theme plugins.
+    pane.removeAttribute(THEME_ATTR);
+    pane.removeAttribute(TONE_ATTR);
     pane.removeAttribute(MERMAID_PAINT_ATTR);
+    pane.style.colorScheme = "";
+  } else {
+    const tone = currentTone();
+    pane.setAttribute(THEME_ATTR, currentTheme);
+    pane.setAttribute(TONE_ATTR, tone);
+    if (shouldPaintMermaid(tone)) {
+      pane.setAttribute(MERMAID_PAINT_ATTR, "true");
+    } else {
+      pane.removeAttribute(MERMAID_PAINT_ATTR);
+    }
+    pane.style.colorScheme = tone;
   }
-  pane.style.colorScheme = tone;
+
+  applyStickyTables(pane);
   syncSurface();
+}
+
+// Sticky headers are behavior rather than theming, so the switch has its own
+// attribute and its CSS reads MarkEdit-preview's GitHub variables. That keeps it
+// working in the "不套用" mode and under other people's themes, while our own
+// themes still win on the header colors through their more specific rules.
+function applyStickyTables(pane) {
+  if (settings.stickyTableHeader) {
+    pane.setAttribute(STICKY_ATTR, "true");
+  } else {
+    pane.removeAttribute(STICKY_ATTR);
+  }
 }
 
 // The palette keys on the resolved tone and on the host appearance, so flipping
@@ -619,7 +678,7 @@ function syncSurface() {
   const isOverlay = pane !== null
     && pane.classList.contains("overlay")
     && getComputedStyle(pane).display !== "none";
-  const surface = isOverlay && currentTheme !== "its" ? currentTheme : "";
+  const surface = isOverlay && currentTheme !== "its" && currentTheme !== NO_THEME ? currentTheme : "";
   for (const element of [document.documentElement, document.body]) {
     if (surface === "") {
       element.removeAttribute(SURFACE_ATTR);

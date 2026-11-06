@@ -63,7 +63,7 @@ pack.update(
         "file": "markedit-theme-pack.js",
         "id": "markedit-theme-pack",
         "sha256": sha,
-        "version": "1.5.1",
+        "version": "1.6.0",
     }
 )
 
@@ -80,6 +80,7 @@ defaults = {
     "autoFold": True,
     "autoFoldLevel": 3,
     "listFolding": True,
+    "stickyTableHeader": True,
     "debug": False,
 }
 if not isinstance(settings.get(key), dict):

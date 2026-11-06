@@ -1,0 +1,3208 @@
+/**
+ * MarkEdit Preview Theme Pack
+ *
+ * One plugin for five preview themes:
+ *   ITS · Maple Light · Maple Dark · Obsidianite · Obsidianite Brackets
+ *
+ * Selection
+ *   Extensions (扩展功能) > Preview Theme > pick a theme.
+ *   The first entry, 默认（不套用）, removes every pack attribute so the
+ *   preview is styled only by MarkEdit-preview's GitHub base and by any other
+ *   installed theme extension; folding keeps working in that mode.
+ *   The choice is remembered in Documents/.markedit-theme-pack.json.
+ *   settings.json can set the initial theme when that state file is absent:
+ *
+ *     "extension.markeditThemePack": {
+ *       "theme": "its",
+ *       "autoFold": true,
+ *       "autoFoldLevel": 3,
+ *       "listFolding": true,
+ *       "stickyTableHeader": true,
+ *       "debug": false
+ *     }
+ *
+ *   autoFold/autoFoldLevel apply to the ITS theme only (matching the original
+ *   ITS plugin). List folding applies to every theme.
+ *
+ * Sticky table headers
+ *   Long tables keep their header row while the preview scrolls. This is
+ *   behavior, not theming: it is keyed on its own attribute
+ *   [data-theme-pack-table-sticky] and takes its colors from MarkEdit-preview's
+ *   GitHub variables, so it also works in 默认（不套用） mode and under other
+ *   themes. Set "stickyTableHeader": false in settings.json to switch it off
+ *   (restart MarkEdit afterwards).
+ *
+ * Fold Levels
+ *   Extensions > 折叠层级: 全部折叠 / 全部打开 / 折叠到 H1..H6.
+ *   Works in preview and in Markdown source mode. In source mode it drives
+ *   CodeMirror's own fold state, so the gutter triangles and the menu stay in
+ *   sync. "全部折叠" folds every heading level as nested folds, so unfolding
+ *   one level reveals the next level still collapsed. "折叠到 Hx" does the
+ *   same for Hx and deeper; H1..H(x-1) keep their content expanded, and the
+ *   Hx heading row itself stays visible. Level options are disabled when the
+ *   document has no headings at that level or deeper.
+ *   Non-ITS themes keep their preview heading triangles hidden.
+ *   The installer registers a pinnable toolbar menu item via
+ *   settings.editor.customToolbarItems[].menuName = "折叠层级".
+ *
+ * Export
+ *   Extensions > Preview Theme > 导出当前主题 HTML…
+ *   Saves a standalone HTML that embeds the active theme CSS, the preview
+ *   HTML and (local) images as data URLs. The file includes print CSS, so
+ *   opening it in a browser and choosing Print / Save as PDF produces a
+ *   themed PDF. MarkEdit's own PDF exports do not read the preview theme.
+ *   The export freezes the tone you are looking at, so the file keeps its
+ *   colors whatever appearance the reader's system uses.
+ *
+ * Tone
+ *   Each theme declares a tone: "light", "dark", or "auto" (ITS, which follows
+ *   the system appearance). The resolved value is written to
+ *   .markdown-body[data-theme-pack-tone], and the derived palettes — fenced-code
+ *   syntax tokens, mermaid diagrams, the ITS palette itself — read CSS custom
+ *   properties keyed on it. Adding a theme therefore means adding a tone, not
+ *   hand-picking token colors. Mermaid follows the same idea but needs one more
+ *   bit: MarkEdit-preview initializes it from the OS appearance, so the plugin
+ *   also sets [data-theme-pack-mermaid-paint] when the diagram palette and the
+ *   theme disagree (or whenever the theme is dark).
+ *
+ * Install / rebuild
+ *   ./scripts/install-theme-pack.sh   (run from the project root)
+ *   The installer builds this file, copies it into MarkEdit's scripts folder,
+ *   enables the pack, and removes the standalone ITS plugin entry/file
+ *   (backed up to /tmp). The project copy src/its/markedit-theme-its-preview.js
+ *   is still the build-time source for the ITS CSS; keep it.
+ *   Quit and relaunch MarkEdit afterwards.
+ *
+ * Theme CSS lives in src/theme-pack-themes.css; build-theme-pack.js inlines both
+ * CSS sources here. Do not hand-edit CSS in this file or in dist/.
+ */
+
+const CSS = `
+
+.markdown-body[data-preview-theme="its"] {
+  --its-text: #6f7780;
+  --its-muted: #8a929b;
+  --its-heading: #8a282c;
+  --its-accent: #8a282c;
+  --its-link: #6f9bcf;
+  --its-rule: #c9d8ee;
+  --its-guide: #7e2425;
+  --its-collapse: #aeb4cf;
+  --its-collapse-hover: #8a282c;
+  --its-active: #9db0cd;
+  --its-check: #3f7fd1;
+  --its-hr-line: #d7dde5;
+  --its-heading-font: "Palatino", "Iowan Old Style", "Book Antiqua", Georgia, serif;
+  --its-list-indent: 3.2em;
+  --its-nested-indent: 4.6em;
+  --its-rail-offset: 1.1em;
+  --its-rail-width: 3px;
+  --its-bullet-offset: 2.15em;
+  --its-triangle-offset: 1.1em;
+  --its-bullet-size: 0.62em;
+  --its-h1-size: 34px;
+  --its-h2-size: 30px;
+  --its-h3-size: 26px;
+  --its-h4-size: 22px;
+  --its-h5-size: 20px;
+  --its-h6-size: 18px;
+  color: var(--its-text);
+  font-size: 16px;
+  line-height: 1.7;
+}
+
+.markdown-body[data-preview-theme="its"][data-theme-pack-tone="dark"] {
+    --its-text: #c8ced8;
+    --its-muted: #8e99a8;
+    --its-heading: #e07a7a;
+    --its-accent: #d05a5a;
+    --its-link: #7aa7d6;
+    --its-rule: #3a4b66;
+    --its-guide: #d05a5a;
+    --its-collapse: #8090a8;
+    --its-collapse-hover: #e07a7a;
+    --its-active: #8fa8c8;
+    --its-check: #4f8bd6;
+    --its-hr-line: #2c333d;
+  }
+
+.markdown-body[data-preview-theme="its"] p {
+  margin: 0.55em 0 0.9em;
+}
+
+.markdown-body[data-preview-theme="its"] a {
+  color: var(--its-link);
+  text-decoration: none;
+}
+
+.markdown-body[data-preview-theme="its"] a:hover {
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+
+/* Headings: serif face, no text underline, one decorative rule below. */
+.markdown-body[data-preview-theme="its"] :is(h1, h2, h3, h4, h5, h6) {
+  position: relative;
+  margin: 0;
+  padding: 0 !important;
+  border-bottom: 0 !important;
+  font-family: var(--its-heading-font);
+  font-weight: 700;
+  line-height: 1.18;
+  letter-spacing: 0.005em;
+  color: var(--its-heading);
+  text-decoration: none;
+}
+
+.markdown-body[data-preview-theme="its"] h1 { font-size: clamp(28px, 4vw, var(--its-h1-size)); margin-top: 0.15em; margin-bottom: 0.55em; }
+.markdown-body[data-preview-theme="its"] h2 { font-size: clamp(24px, 3.2vw, var(--its-h2-size)); margin-top: 2.1em; margin-bottom: 0.55em; }
+.markdown-body[data-preview-theme="its"] h3 { font-size: clamp(21px, 2.7vw, var(--its-h3-size)); margin-top: 1.65em; margin-bottom: 0.45em; }
+.markdown-body[data-preview-theme="its"] h4 { font-size: var(--its-h4-size); margin-top: 1.5em; margin-bottom: 0.4em; }
+.markdown-body[data-preview-theme="its"] h5 { font-size: var(--its-h5-size); margin-top: 1.35em; margin-bottom: 0.35em; }
+.markdown-body[data-preview-theme="its"] h6 { font-size: var(--its-h6-size); margin-top: 1.25em; margin-bottom: 0.3em; }
+
+.markdown-body[data-preview-theme="its"] :is(h1, h2, h3, h4, h5, h6)::after {
+  content: "";
+  display: block;
+  width: 100%;
+  height: 4px;
+  margin-top: 0.16em;
+  border-radius: 1px;
+  background: var(--its-rule);
+}
+
+.markdown-body[data-preview-theme="its"] :is(h1, h2, h3, h4, h5, h6) > .its-heading-fold {
+  position: absolute;
+  left: -22px;
+  top: calc(0.59em - 8px);
+  font-size: inherit;
+}
+
+/* Lists: one continuous rail for the first level, one short rail per nested item. */
+.markdown-body[data-preview-theme="its"] ul {
+  position: relative;
+  margin: 0.55em 0 0.9em;
+  padding-left: var(--its-list-indent);
+  list-style: none;
+  --its-current-indent: var(--its-list-indent);
+}
+
+.markdown-body[data-preview-theme="its"] ul ul {
+  margin: 0.18em 0 0.25em;
+  padding-left: var(--its-nested-indent);
+  --its-current-indent: var(--its-nested-indent);
+}
+
+.markdown-body[data-preview-theme="its"] ul::before {
+  content: "";
+  position: absolute;
+  left: calc(var(--its-current-indent) - var(--its-rail-offset) - var(--its-rail-width) / 2);
+  top: 0.15em;
+  bottom: 0.15em;
+  width: var(--its-rail-width);
+  border-radius: 1px;
+  background: var(--its-guide);
+}
+
+.markdown-body[data-preview-theme="its"] ul.its-nested-list::before {
+  display: none;
+}
+
+.markdown-body[data-preview-theme="its"] li {
+  position: relative;
+  margin: 0.12em 0;
+  padding-left: 0;
+}
+
+.markdown-body[data-preview-theme="its"] ul > li:not(.task-list-item)::before {
+  content: "";
+  position: absolute;
+  z-index: 1;
+  left: calc(-1 * var(--its-bullet-offset) - var(--its-bullet-size) / 2);
+  top: calc(0.85em - var(--its-bullet-size) / 2);
+  width: var(--its-bullet-size);
+  height: var(--its-bullet-size);
+  border-radius: 1px;
+  background: var(--its-accent);
+  transform: rotate(45deg);
+  transform-origin: center;
+}
+
+.markdown-body[data-preview-theme="its"] ul.its-nested-list > li:not(.task-list-item)::before {
+  top: 50%;
+  transform: translateY(-50%) rotate(45deg);
+}
+
+.markdown-body[data-preview-theme="its"] ul.its-nested-list > li::after {
+  content: "";
+  position: absolute;
+  left: calc(-1 * var(--its-rail-offset) - var(--its-rail-width) / 2);
+  top: 0;
+  bottom: 0;
+  width: var(--its-rail-width);
+  border-radius: 1px;
+  background: var(--its-guide);
+  pointer-events: none;
+}
+
+.markdown-body[data-preview-theme="its"] .its-fold {
+  position: absolute;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: 0;
+  border-radius: 3px;
+  background: transparent;
+  color: var(--its-collapse);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+
+.markdown-body[data-preview-theme="its"] .its-fold::before {
+  content: "";
+  width: 0;
+  height: 0;
+  border-left: 8px solid currentColor;
+  border-top: 6px solid transparent;
+  border-bottom: 6px solid transparent;
+  transform-origin: 35% 50%;
+  transition: transform 0.15s ease;
+}
+
+.markdown-body[data-preview-theme="its"] .its-fold[aria-expanded="true"]::before {
+  transform: rotate(90deg);
+}
+
+.markdown-body[data-preview-theme="its"] .its-fold:hover {
+  color: var(--its-collapse-hover);
+  background: color-mix(in srgb, var(--its-accent) 10%, transparent);
+}
+
+.markdown-body[data-preview-theme="its"] .its-fold:focus-visible {
+  outline: 2px solid var(--its-collapse-hover);
+  outline-offset: 1px;
+}
+
+.markdown-body[data-preview-theme="its"] .its-fold:disabled {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.markdown-body[data-preview-theme="its"] li > .its-list-fold {
+  position: absolute;
+  left: calc(-1 * (var(--its-bullet-offset) + var(--its-triangle-offset)) - 8px);
+  top: calc(0.85em - 8px);
+  font-size: inherit;
+}
+
+.markdown-body[data-preview-theme="its"] ul.its-nested-list > li > .its-list-fold {
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.markdown-body[data-preview-theme="its"] ul:not(.its-nested-list) > li:hover:not(:has(li:hover))::after {
+  content: "";
+  position: absolute;
+  left: calc(-1 * var(--its-rail-offset) - var(--its-rail-width) / 2);
+  top: 0.08em;
+  width: var(--its-rail-width);
+  height: 1.55em;
+  border-radius: 1px;
+  background: var(--its-active);
+  pointer-events: none;
+}
+
+.markdown-body[data-preview-theme="its"] ul.its-nested-list > li:hover:not(:has(li:hover))::after {
+  background: var(--its-active);
+}
+
+.markdown-body[data-preview-theme="its"] ul > li:hover:not(:has(li:hover))::before {
+  background: var(--its-active);
+}
+
+.markdown-body[data-preview-theme="its"] li:hover:not(:has(li:hover)) > .its-list-fold {
+  color: var(--its-active);
+}
+
+.markdown-body[data-preview-theme="its"] li.is-collapsed > ul,
+.markdown-body[data-preview-theme="its"] li.is-collapsed > p:not(:first-of-type),
+.markdown-body[data-preview-theme="its"] li.is-collapsed > blockquote,
+.markdown-body[data-preview-theme="its"] li.is-collapsed > pre,
+.markdown-body[data-preview-theme="its"] li.is-collapsed > table {
+  display: none;
+}
+
+/* Task items: the checkbox is the marker, kept to the right of the rail. */
+.markdown-body[data-preview-theme="its"] .task-list-item .task-list-item-checkbox {
+  position: absolute;
+  z-index: 1;
+  left: calc(-1 * var(--its-bullet-offset) - 0.45em);
+  top: calc(0.85em - 0.45em);
+  -webkit-appearance: none;
+  appearance: none;
+  box-sizing: border-box;
+  width: 0.9em;
+  height: 0.9em;
+  margin: 0;
+  border: 1.5px solid var(--its-collapse);
+  border-radius: 2px;
+  background-color: transparent;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: 0.72em 0.72em;
+  cursor: pointer;
+}
+
+.markdown-body[data-preview-theme="its"] ul.its-nested-list > li.task-list-item .task-list-item-checkbox {
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.markdown-body[data-preview-theme="its"] .task-list-item .task-list-item-checkbox:checked {
+  border-color: var(--its-check);
+  background-color: var(--its-check);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3.2 8.4 6.4 11.6 12.8 4.8' fill='none' stroke='%23fff' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+
+.markdown-body[data-preview-theme="its"] .task-list-item .task-list-item-checkbox:focus-visible {
+  outline: 2px solid var(--its-check);
+  outline-offset: 1px;
+}
+
+.markdown-body[data-preview-theme="its"] li.task-list-item > label {
+  position: static;
+  margin-left: 0;
+}
+
+.markdown-body[data-preview-theme="its"] li.task-list-item:has(> label > input.task-list-item-checkbox:checked) > label,
+.markdown-body[data-preview-theme="its"] li.task-list-item:has(> p > label > input.task-list-item-checkbox:checked) > p > label {
+  color: var(--its-muted);
+  text-decoration: line-through;
+}
+
+/* Horizontal rule with the lightning mark. */
+.markdown-body[data-preview-theme="its"] hr {
+  position: relative;
+  height: 20px;
+  margin: 2.3em 0;
+  border: 0;
+  background: linear-gradient(var(--its-hr-line), var(--its-hr-line)) center / 100% 1px no-repeat;
+}
+
+.markdown-body[data-preview-theme="its"] hr::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 22px;
+  height: 22px;
+  transform: translate(-50%, -50%);
+  background: var(--its-accent);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M13 2 4 14h6l-1 8 10-12h-6l1-8z'/%3E%3C/svg%3E") center / 20px 20px no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M13 2 4 14h6l-1 8 10-12h-6l1-8z'/%3E%3C/svg%3E") center / 20px 20px no-repeat;
+}
+
+@media (max-width: 640px) {
+  .markdown-body[data-preview-theme="its"] {
+    --its-list-indent: 2.8em;
+    --its-nested-indent: 4em;
+    --its-rail-offset: 1em;
+    --its-rail-width: 2px;
+    --its-bullet-offset: 1.9em;
+    --its-triangle-offset: 1em;
+    --its-bullet-size: 0.6em;
+  }
+
+  .markdown-body[data-preview-theme="its"] :is(h1, h2, h3, h4, h5, h6) > .its-heading-fold {
+    left: -16px;
+  }
+}
+
+/* ---------- Maple / Obsidianite themes ---------- */
+/* ==========================================================================
+   MarkEdit Preview Theme Pack — Maple / Obsidianite
+   All rules are scoped to .markdown-body[data-preview-theme="..."].
+   The ITS theme CSS is generated from the original ITS plugin and inserted
+   before this block by build-theme-pack.js.
+   ========================================================================== */
+
+/* ---------- shared preview surface ---------- */
+/* Important: never set position/display/min-height on .markdown-body itself.
+   MarkEdit-preview implements overlay mode with
+   .markdown-body.overlay { position: absolute; inset: 0; display: block; z-index: 10000; }
+   Overriding position there breaks preview switching and leaves the editor visible. */
+.markdown-body[data-preview-theme] {
+  box-sizing: border-box;
+}
+
+.markdown-body[data-preview-theme] :is(h1, h2, h3, h4, h5, h6) {
+  border-bottom: 0 !important;
+}
+
+.markdown-body[data-preview-theme] li.is-collapsed > ul {
+  display: none;
+}
+
+/* ---------- sticky table headers (behavior, not theming) ---------- */
+/* Keyed on its own attribute so long tables keep their header row even in the
+   默认（不套用） mode and under someone else's theme. :where() keeps the
+   specificity down to the attribute alone, so every theme's own header rule
+   still wins on colors. */
+.markdown-body[data-theme-pack-table-sticky] :where(thead th) {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  /* Same fallback chain GitHub's own stylesheet uses: canvas follows the
+     current color-scheme, so a stuck header stays opaque in either appearance.
+     The text color is deliberately left alone and keeps inheriting. */
+  background-color: var(--bgColor-muted, var(--color-bg-subtle, canvas));
+  box-shadow: inset 0 -1px 0 var(--borderColor-default, var(--color-border-default, ButtonBorder));
+}
+
+/* GitHub base turns every table into its own scroll container
+   (display:block + width:fit-content + overflow:auto). A sticky cell then
+   sticks to that container, i.e. nothing happens while the page scrolls, so the
+   normal table box has to come back first. Trade-off: a very wide table widens
+   the page instead of getting its own horizontal scrollbar; setting
+   "stickyTableHeader": false restores GitHub's behavior. */
+.markdown-body[data-theme-pack-table-sticky] :where(table) {
+  display: table;
+  /* auto keeps GitHub's shrink-to-fit look for narrow tables; our own themes
+     set width:100% with a more specific rule. */
+  width: auto;
+  max-width: 100%;
+  overflow: visible;
+}
+
+/* Heading sections are foldable in every theme. Non-ITS themes keep their
+   original layout while expanded, and use the Fold Levels menu (their heading
+   fold triangles stay hidden). */
+.markdown-body[data-preview-theme]:not([data-preview-theme="its"]) .its-section-content {
+  display: contents;
+}
+
+.markdown-body[data-preview-theme]:not([data-preview-theme="its"]) .its-section-content[hidden] {
+  display: none;
+}
+
+/* Heading fold triangles: hidden by default, revealed when the heading row
+   is hovered/focused. An invisible 32px strip on the left of every heading
+   keeps the row hovered while the pointer travels from the text to the
+   triangle; the button also has an 8px click halo. */
+.markdown-body[data-preview-theme] :is(h1, h2, h3, h4, h5, h6)::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -32px;
+  display: block;
+  width: 32px;
+  pointer-events: auto;
+}
+
+.markdown-body[data-preview-theme] :is(h1, h2, h3, h4, h5, h6) > .its-heading-fold::after {
+  content: "";
+  position: absolute;
+  inset: -8px;
+}
+
+.markdown-body[data-preview-theme]:not([data-preview-theme="its"]) :is(h1, h2, h3, h4, h5, h6) > .its-heading-fold {
+  position: absolute;
+  z-index: 2;
+  top: calc(0.59em - 7px);
+  left: -20px;
+  display: grid;
+  place-items: center;
+  width: 14px;
+  height: 14px;
+  padding: 0;
+  border: 0;
+  border-radius: 3px;
+  background: transparent;
+  color: var(--ob-muted, var(--mp-muted));
+  font-size: inherit;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  transition: color 0.15s ease, opacity 0.15s ease;
+}
+
+.markdown-body[data-preview-theme]:not([data-preview-theme="its"]) :is(h1, h2, h3, h4, h5, h6) > .its-heading-fold::before {
+  content: "";
+  width: 0;
+  height: 0;
+  border-top: 4.5px solid transparent;
+  border-bottom: 4.5px solid transparent;
+  border-left: 6px solid currentColor;
+  transform-origin: 35% 50%;
+}
+
+.markdown-body[data-preview-theme]:not([data-preview-theme="its"]) :is(h1, h2, h3, h4, h5, h6) > .its-heading-fold[aria-expanded="true"]::before {
+  transform: rotate(90deg);
+}
+
+.markdown-body[data-preview-theme]:not([data-preview-theme="its"]) :is(h1, h2, h3, h4, h5, h6) > .its-heading-fold:hover {
+  color: var(--ob-accent, var(--mp-accent));
+}
+
+.markdown-body[data-preview-theme]:not([data-preview-theme="its"]) :is(h1, h2, h3, h4, h5, h6):hover > .its-heading-fold:not(:disabled),
+.markdown-body[data-preview-theme]:not([data-preview-theme="its"]) :is(h1, h2, h3, h4, h5, h6):focus-within > .its-heading-fold:not(:disabled),
+.markdown-body[data-preview-theme]:not([data-preview-theme="its"]) .its-heading-fold:focus-visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.markdown-body[data-preview-theme]:not([data-preview-theme="its"]) .its-heading-fold:disabled {
+  opacity: 0;
+  pointer-events: none;
+}
+
+@media (hover: none) {
+  .markdown-body[data-preview-theme]:not([data-preview-theme="its"]) :is(h1, h2, h3, h4, h5, h6) > .its-heading-fold:not(:disabled) {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
+/* ITS heading triangles are hover-only too. */
+.markdown-body[data-preview-theme="its"] :is(h1, h2, h3, h4, h5, h6) > .its-heading-fold:not(:disabled) {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease, color 0.15s ease, background 0.15s ease;
+}
+
+.markdown-body[data-preview-theme="its"] :is(h1, h2, h3, h4, h5, h6):hover > .its-heading-fold:not(:disabled),
+.markdown-body[data-preview-theme="its"] :is(h1, h2, h3, h4, h5, h6):focus-within > .its-heading-fold:not(:disabled),
+.markdown-body[data-preview-theme="its"] .its-heading-fold:focus-visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+@media (hover: none) {
+  .markdown-body[data-preview-theme="its"] :is(h1, h2, h3, h4, h5, h6) > .its-heading-fold:not(:disabled) {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
+/* Dark overscroll / page surface, only while the overlay preview is active. */
+html[data-theme-pack-surface="maple-light"],
+body[data-theme-pack-surface="maple-light"] {
+  background: #fbf8f3 !important;
+}
+
+html[data-theme-pack-surface="maple-dark"],
+body[data-theme-pack-surface="maple-dark"] {
+  background: #0d0f11 !important;
+  color-scheme: dark;
+}
+
+html[data-theme-pack-surface="obsidianite"],
+body[data-theme-pack-surface="obsidianite"],
+html[data-theme-pack-surface="obsidianite-bracket"],
+body[data-theme-pack-surface="obsidianite-bracket"] {
+  background: #100e17 !important;
+  color-scheme: dark;
+}
+
+/* ==========================================================================
+   Tone-driven palettes
+   The preview tone is written to .markdown-body[data-theme-pack-tone] by the
+   plugin. Light is the fallback; dark overrides it, and individual themes can
+   override the generic dark palette afterwards.
+   ========================================================================== */
+.markdown-body[data-preview-theme] {
+  --code-fg: #24292e;
+  --code-keyword: #d73a49;
+  --code-entity: #6f42c1;
+  --code-constant: #005cc5;
+  --code-string: #032f62;
+  --code-symbol: #e36209;
+  --code-comment: #6a737d;
+  --code-tag: #22863a;
+  --code-section: #005cc5;
+  --code-bullet: #735c0f;
+  --code-addition: #22863a;
+  --code-addition-bg: #f0fff4;
+  --code-deletion: #b31d28;
+  --code-deletion-bg: #ffeef2;
+  --mermaid-text: #24292e;
+  --mermaid-panel: #ffffff;
+  --mermaid-panel-strong: #f6f8fa;
+  --mermaid-border: #d0d7de;
+  --mermaid-line: #57606a;
+  --mermaid-accent: #0969da;
+  --mermaid-cluster: rgba(9, 105, 218, 0.05);
+  --mermaid-note-bg: #fff5ad;
+  --mermaid-note-border: #f0d85a;
+  --mermaid-note-text: #333333;
+}
+
+.markdown-body[data-theme-pack-tone="dark"] {
+  --code-fg: #c9d1d9;
+  --code-keyword: #ff7b72;
+  --code-entity: #d2a8ff;
+  --code-constant: #79c0ff;
+  --code-string: #a5d6ff;
+  --code-symbol: #ffa657;
+  --code-comment: #8b949e;
+  --code-tag: #7ee787;
+  --code-section: #79c0ff;
+  --code-bullet: #ffa657;
+  --code-addition: #aff5b4;
+  --code-addition-bg: rgba(63, 185, 80, 0.15);
+  --code-deletion: #ffd8d3;
+  --code-deletion-bg: rgba(248, 81, 73, 0.15);
+  --mermaid-text: #c9d1d9;
+  --mermaid-panel: #0d1117;
+  --mermaid-panel-strong: #161b22;
+  --mermaid-border: #30363d;
+  --mermaid-line: #8b949e;
+  --mermaid-accent: #58a6ff;
+  --mermaid-cluster: rgba(88, 166, 255, 0.08);
+  --mermaid-note-bg: rgba(210, 153, 34, 0.12);
+  --mermaid-note-border: rgba(210, 153, 34, 0.35);
+  --mermaid-note-text: #e3b341;
+}
+
+.markdown-body[data-preview-theme="its"] {
+  --mermaid-text: #333333;
+  --mermaid-panel: #ffffff;
+  --mermaid-panel-strong: #f6f8fa;
+  --mermaid-border: #c9d8ee;
+  --mermaid-line: #6f7780;
+  --mermaid-accent: #8a282c;
+  --mermaid-cluster: rgba(201, 216, 238, 0.25);
+  --mermaid-note-bg: rgba(255, 245, 173, 0.85);
+  --mermaid-note-border: #f0d85a;
+  --mermaid-note-text: #333333;
+}
+
+.markdown-body[data-preview-theme="its"][data-theme-pack-tone="dark"] {
+  --mermaid-text: #c8ced8;
+  --mermaid-panel: #101418;
+  --mermaid-panel-strong: #161b22;
+  --mermaid-border: #3a4b66;
+  --mermaid-line: #8e99a8;
+  --mermaid-accent: #d05a5a;
+  --mermaid-cluster: rgba(58, 75, 102, 0.35);
+  --mermaid-note-bg: rgba(224, 122, 122, 0.12);
+  --mermaid-note-border: rgba(224, 122, 122, 0.35);
+  --mermaid-note-text: #e07a7a;
+}
+
+/* ==========================================================================
+   Maple
+   ========================================================================== */
+.markdown-body[data-preview-theme="maple-light"] {
+  --mp-bg: #fbf8f3;
+  --mp-text: #3b3a36;
+  --mp-heading: #2f2e2a;
+  --mp-muted: #8a877e;
+  --mp-accent: #5d9e6b;
+  --mp-accent-soft: #a9c7b1;
+  --mp-link: #4f8f63;
+  --mp-line: #e6ded2;
+  --mp-code: #f0ebe2;
+  --mp-check-border: #a9c7b1;
+  --mp-check-fill: #5d9e6b;
+  --mp-guide: rgba(60, 60, 50, 0.14);
+  --mp-hover: rgba(93, 158, 107, 0.1);
+  --mp-thread: rgba(93, 158, 107, 0.68);
+  --mp-h1: #a54b4b;
+  --mp-h2: #b86b2b;
+  --mp-h3: #5d9e6b;
+  --mp-h4: #4e7fb0;
+  --mp-h5: #7e6aa8;
+  --mp-h6: #4a9a9a;
+  --mermaid-text: #3b3a36;
+  --mermaid-panel: #ffffff;
+  --mermaid-panel-strong: #fbf8f3;
+  --mermaid-border: #e6ded2;
+  --mermaid-line: #8a877e;
+  --mermaid-accent: #5d9e6b;
+  --mermaid-cluster: rgba(93, 158, 107, 0.08);
+  --mermaid-note-bg: rgba(184, 107, 43, 0.12);
+  --mermaid-note-border: rgba(184, 107, 43, 0.35);
+  --mermaid-note-text: #b86b2b;
+}
+
+.markdown-body[data-preview-theme="maple-dark"] {
+  --mp-bg: #0d0f11;
+  --mp-text: #c3d0dc;
+  --mp-heading: #d8e2ec;
+  --mp-muted: #7f8d9b;
+  --mp-accent: #6f93b3;
+  --mp-accent-soft: #3e5366;
+  --mp-link: #8ab4d8;
+  --mp-line: #202830;
+  --mp-code: #14181c;
+  --mp-check-border: #3e5366;
+  --mp-check-fill: #6f93b3;
+  --mp-guide: rgba(230, 240, 250, 0.12);
+  --mp-hover: rgba(111, 147, 179, 0.13);
+  --mp-thread: rgba(111, 147, 179, 0.68);
+  --mp-h1: #d98b8b;
+  --mp-h2: #d6a06a;
+  --mp-h3: #8fc29b;
+  --mp-h4: #8ab4d8;
+  --mp-h5: #b3a0d6;
+  --mp-h6: #7fc7c7;
+  --code-fg: #c9d1d9;
+  --code-keyword: #ff7b72;
+  --code-entity: #d2a8ff;
+  --code-constant: #79c0ff;
+  --code-string: #a5d6ff;
+  --code-symbol: #ffa657;
+  --code-comment: #8b949e;
+  --code-tag: #7ee787;
+  --code-section: #79c0ff;
+  --code-bullet: #ffa657;
+  --mermaid-text: #d8e2ec;
+  --mermaid-panel: #151b22;
+  --mermaid-panel-strong: #1b2430;
+  --mermaid-border: #56718a;
+  --mermaid-line: #9fb0c0;
+  --mermaid-accent: #6f93b3;
+  --mermaid-cluster: rgba(111, 147, 179, 0.08);
+  --mermaid-note-bg: rgba(214, 160, 106, 0.12);
+  --mermaid-note-border: rgba(214, 160, 106, 0.35);
+  --mermaid-note-text: #e0b07a;
+}
+
+.markdown-body[data-preview-theme^="maple"] {
+  padding: 36px 44px 48px !important;
+  background: var(--mp-bg);
+  color: var(--mp-text);
+  font-size: 16px;
+  line-height: 1.8;
+}
+
+.markdown-body[data-preview-theme="maple-dark"] {
+  color-scheme: dark;
+}
+
+.markdown-body[data-preview-theme^="maple"] p {
+  margin: 0.6em 0 0.95em;
+}
+
+.markdown-body[data-preview-theme^="maple"] a {
+  color: var(--mp-link);
+  text-decoration: none;
+}
+
+.markdown-body[data-preview-theme^="maple"] a:hover {
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+
+.markdown-body[data-preview-theme^="maple"] strong {
+  font-weight: 700;
+}
+
+.markdown-body[data-preview-theme^="maple"] code {
+  padding: 0.12em 0.34em;
+  border-radius: 4px;
+  background: var(--mp-code);
+  color: var(--mp-text);
+  font-family: "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+  font-size: 0.86em;
+}
+
+.markdown-body[data-preview-theme^="maple"] pre {
+  overflow: auto;
+  margin: 1.2em 0;
+  padding: 14px 16px;
+  border: 1px solid var(--mp-line);
+  border-radius: 8px;
+  background: var(--mp-code);
+}
+
+.markdown-body[data-preview-theme^="maple"] pre code {
+  padding: 0;
+  background: none;
+  font-size: 1em;
+}
+
+.markdown-body[data-preview-theme^="maple"] :is(h1, h2, h3, h4, h5, h6) {
+  position: relative;
+  margin: 0;
+  padding: 0 !important;
+  font-family: inherit;
+  line-height: 1.35;
+}
+
+.markdown-body[data-preview-theme^="maple"] h1 {
+  margin: 0 0 0.55em;
+  color: var(--mp-h1);
+  font-size: 1.6em;
+  font-weight: 750;
+}
+
+.markdown-body[data-preview-theme^="maple"] h2 {
+  margin: 1.35em 0 0.7em;
+  color: var(--mp-h2);
+  font-size: 1.5em;
+  font-weight: 700;
+}
+
+.markdown-body[data-preview-theme^="maple"] h3 {
+  margin: 1.2em 0 0.4em;
+  color: var(--mp-h3);
+  font-size: 1.4em;
+  font-weight: 600;
+}
+
+.markdown-body[data-preview-theme^="maple"] h4 {
+  color: var(--mp-h4);
+  font-size: 1.3em;
+  font-weight: 550;
+}
+
+.markdown-body[data-preview-theme^="maple"] h5 {
+  color: var(--mp-h5);
+  font-size: 1.2em;
+  font-weight: 550;
+}
+
+.markdown-body[data-preview-theme^="maple"] h6 {
+  color: var(--mp-h6);
+  font-size: 1.1em;
+  font-weight: 500;
+}
+
+.markdown-body[data-preview-theme^="maple"] h2::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: -0.32em;
+  left: 0;
+  height: 1px;
+  background: linear-gradient(to right, currentColor, transparent 84%);
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+.markdown-body[data-preview-theme^="maple"] blockquote {
+  margin: 1.1em 0;
+  padding: 0.15em 0 0.15em 1em;
+  border-left: 3px solid var(--mp-accent-soft);
+  color: var(--mp-muted);
+}
+
+.markdown-body[data-preview-theme^="maple"] hr {
+  position: relative;
+  height: 20px;
+  margin: 2.6em 0;
+  border: 0;
+  background:
+    linear-gradient(to right, transparent, var(--mp-accent-soft) 16%, var(--mp-accent-soft) 42%, transparent 42%, transparent 58%, var(--mp-accent-soft) 58%, var(--mp-accent-soft) 84%, transparent)
+    center / 100% 1px no-repeat;
+}
+
+.markdown-body[data-preview-theme^="maple"] hr::after {
+  content: "⭐";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  display: block;
+  padding: 0 0.4em;
+  transform: translate(-50%, -50%);
+  background: var(--mp-bg);
+  font-size: 0.92em;
+  line-height: 1;
+}
+
+/* Maple lists: always-visible grey guide, hover-only green active branch. */
+.markdown-body[data-preview-theme^="maple"] ul {
+  position: relative;
+  margin: 0.5em 0 0.9em;
+  padding-left: 1.4em;
+  list-style: none;
+}
+
+.markdown-body[data-preview-theme^="maple"] li {
+  position: relative;
+  margin: 0.15em 0;
+  padding-left: 0;
+}
+
+.markdown-body[data-preview-theme^="maple"] ul > li:not(.task-list-item)::before {
+  content: "";
+  position: absolute;
+  top: 0.6em;
+  left: -1em;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--mp-accent);
+}
+
+.markdown-body[data-preview-theme^="maple"] li > ul::before {
+  content: "";
+  position: absolute;
+  top: -1.4em;
+  bottom: 0.1em;
+  left: calc(-0.75em - 0.5px);
+  width: 1px;
+  border-radius: 1px;
+  background: var(--mp-guide);
+  pointer-events: none;
+}
+
+.markdown-body[data-preview-theme^="maple"] ul ul > li.is-branch::after {
+  content: "";
+  position: absolute;
+  top: calc(0.85em - 0.7em);
+  left: calc(-2.15em - 1px);
+  width: calc(1.15em + 1px);
+  height: 0.7em;
+  border-bottom: 1px solid var(--mp-thread);
+  border-left: 2px solid var(--mp-thread);
+  border-bottom-left-radius: 0.45em;
+  pointer-events: none;
+}
+
+.markdown-body[data-preview-theme^="maple"] li.task-list-item > ul::before {
+  left: calc(-0.7em - 0.5px);
+}
+
+.markdown-body[data-preview-theme^="maple"] li.task-list-item > ul > li.is-branch::after {
+  left: calc(-2.1em - 1px);
+}
+
+.markdown-body[data-preview-theme^="maple"] li.is-hovered {
+  background-image: linear-gradient(var(--mp-hover), var(--mp-hover));
+  background-repeat: no-repeat;
+  background-size: 100% 1.8em;
+  border-radius: 4px;
+}
+
+/* Maple tasks. The input keeps the UA font size, so vertical offset is in px. */
+.markdown-body[data-preview-theme^="maple"] .task-list-item .task-list-item-checkbox {
+  position: absolute;
+  z-index: 2;
+  top: 7.5px;
+  left: -19px;
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  border: 2px solid var(--mp-check-border);
+  border-radius: 3px;
+  background: transparent;
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+}
+
+.markdown-body[data-preview-theme^="maple"] .task-list-item .task-list-item-checkbox:checked {
+  border-color: var(--mp-check-fill);
+  background: var(--mp-check-fill)
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3.2 8.4 6.4 11.6 12.8 4.8' fill='none' stroke='%23fff' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")
+    center / 9px 9px no-repeat;
+}
+
+.markdown-body[data-preview-theme^="maple"] .task-list-item > label {
+  position: static;
+}
+
+.markdown-body[data-preview-theme^="maple"] li.task-list-item:has(> label > input:checked) > label {
+  color: var(--mp-muted);
+  text-decoration: line-through;
+}
+
+/* Maple list fold triangles. */
+.markdown-body[data-preview-theme^="maple"] .its-list-fold {
+  position: absolute;
+  z-index: 3;
+  top: 7px;
+  left: -26px;
+  display: grid;
+  place-items: center;
+  width: 14px;
+  height: 14px;
+  padding: 0;
+  border: 0;
+  border-radius: 3px;
+  background: transparent;
+  color: var(--mp-muted);
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  transition: color 0.15s ease;
+}
+
+.markdown-body[data-preview-theme^="maple"] .its-list-fold::before {
+  content: "";
+  width: 0;
+  height: 0;
+  border-top: 4.5px solid transparent;
+  border-bottom: 4.5px solid transparent;
+  border-left: 6px solid currentColor;
+  transform-origin: 35% 50%;
+}
+
+.markdown-body[data-preview-theme^="maple"] .its-list-fold[aria-expanded="true"]::before {
+  transform: rotate(90deg);
+}
+
+.markdown-body[data-preview-theme^="maple"] .its-list-fold:hover {
+  color: var(--mp-accent);
+}
+
+.markdown-body[data-preview-theme^="maple"] li:hover:not(:has(li:hover)) > .its-list-fold,
+.markdown-body[data-preview-theme^="maple"] li:focus-within > .its-list-fold,
+.markdown-body[data-preview-theme^="maple"] .its-list-fold:focus-visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+@media (hover: none) {
+  .markdown-body[data-preview-theme^="maple"] .its-list-fold {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
+/* Maple ordered lists: the number is the marker; no decorative dot. */
+.markdown-body[data-preview-theme^="maple"] ol {
+  margin: 0.5em 0 0.9em;
+  padding-left: 2.4em;
+}
+
+.markdown-body[data-preview-theme^="maple"] ol > li::marker {
+  color: var(--mp-accent);
+  font-weight: 600;
+}
+
+.markdown-body[data-preview-theme^="maple"] ol > li > .its-list-fold {
+  left: -2.7em;
+}
+
+/* Maple table. No overflow:hidden: that would turn the table into its own
+   scroll container and silently kill the sticky header. The rounded corners are
+   carried by the corner cells instead. */
+.markdown-body[data-preview-theme^="maple"] table {
+  display: table;
+  width: 100%;
+  margin: 1.2em 0;
+  border: 1px solid var(--mp-line);
+  border-spacing: 0;
+  border-collapse: separate;
+  border-radius: 8px;
+  background: var(--mp-bg);
+  font-size: 0.94em;
+}
+
+.markdown-body[data-preview-theme^="maple"] th {
+  padding: 10px 12px;
+  background: var(--mp-accent);
+  color: #fff;
+  font-weight: 600;
+  text-align: left;
+  box-shadow: inset 0 -1px 0 var(--mp-line);
+}
+
+.markdown-body[data-preview-theme^="maple"] thead th:first-child { border-top-left-radius: 8px; }
+.markdown-body[data-preview-theme^="maple"] thead th:last-child { border-top-right-radius: 8px; }
+.markdown-body[data-preview-theme^="maple"] tbody tr:last-child td:first-child { border-bottom-left-radius: 8px; }
+.markdown-body[data-preview-theme^="maple"] tbody tr:last-child td:last-child { border-bottom-right-radius: 8px; }
+
+.markdown-body[data-preview-theme^="maple"] td {
+  padding: 10px 12px;
+  border-top: 1px solid var(--mp-line);
+  background-color: var(--mp-bg);
+  color: var(--mp-text);
+  vertical-align: top;
+}
+
+.markdown-body[data-preview-theme^="maple"] tr:nth-child(even) td {
+  background-color: color-mix(in srgb, var(--mp-line) 24%, var(--mp-bg));
+}
+
+/* ==========================================================================
+   Obsidianite / Obsidianite Brackets
+   ========================================================================== */
+.markdown-body[data-preview-theme^="obsidianite"] {
+  --ob-bg: #100e17;
+  --ob-panel: #191621;
+  --ob-text: #bebebe;
+  --ob-heading: #cbdbe5;
+  --ob-accent: #0fb6d6;
+  --ob-sub: #f4569d;
+  --ob-link: #6bcafb;
+  --ob-muted: #7e8794;
+  --ob-line: rgba(107, 202, 251, 0.24);
+  --ob-thread: rgba(14, 210, 247, 0.26);
+  --ob-code: #191621;
+  --code-fg: #d6d6d6;
+  --code-keyword: #f4569d;
+  --code-entity: #6bcafb;
+  --code-constant: #38d6f0;
+  --code-string: #a5d6ff;
+  --code-symbol: #ffd580;
+  --code-comment: #8b949e;
+  --code-tag: #7ee787;
+  --code-section: #6bcafb;
+  --code-bullet: #ffd580;
+  --mermaid-text: #e6edf3;
+  --mermaid-panel: #191621;
+  --mermaid-panel-strong: #221c2f;
+  --mermaid-border: rgba(14, 210, 247, 0.45);
+  --mermaid-line: rgba(107, 202, 251, 0.72);
+  --mermaid-accent: #0fb6d6;
+  --mermaid-cluster: rgba(14, 210, 247, 0.06);
+  --mermaid-note-bg: rgba(255, 213, 128, 0.12);
+  --mermaid-note-border: rgba(255, 213, 128, 0.35);
+  --mermaid-note-text: #ffd580;
+  padding: 36px 40px 48px !important;
+  background: var(--ob-bg);
+  color: var(--ob-text);
+  font-family: "Rubik", -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  font-size: 18px;
+  font-weight: 450;
+  line-height: 1.7;
+  color-scheme: dark;
+}
+
+.markdown-body[data-preview-theme^="obsidianite"] p {
+  margin: 0.6em 0 0.95em;
+}
+
+.markdown-body[data-preview-theme^="obsidianite"] a {
+  color: var(--ob-link);
+  text-decoration: none;
+}
+
+.markdown-body[data-preview-theme^="obsidianite"] a:hover {
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+
+.markdown-body[data-preview-theme^="obsidianite"] code {
+  padding: 0.12em 0.36em;
+  border-radius: 4px;
+  background: var(--ob-code);
+  color: var(--ob-accent);
+  font-family: "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+  font-size: 0.86em;
+}
+
+.markdown-body[data-preview-theme^="obsidianite"] pre {
+  overflow: auto;
+  margin: 1.2em 0;
+  padding: 14px 16px;
+  border: 1px solid rgba(14, 210, 247, 0.12);
+  border-radius: 8px;
+  background: var(--ob-code);
+}
+
+.markdown-body[data-preview-theme^="obsidianite"] pre code {
+  padding: 0;
+  background: none;
+  color: var(--ob-text);
+  font-size: 1em;
+}
+
+.markdown-body[data-preview-theme^="obsidianite"] h1 {
+  position: relative;
+  margin: 0 0 0.45em;
+  padding: 0 !important;
+  color: var(--ob-accent);
+  font-size: 34px;
+  font-weight: 650;
+}
+
+.markdown-body[data-preview-theme^="obsidianite"] :is(h2, h3, h4, h5, h6) {
+  position: relative;
+  margin: 42px 0 18px;
+  padding-bottom: 10px;
+  color: var(--ob-heading);
+  font-weight: 600;
+}
+
+.markdown-body[data-preview-theme^="obsidianite"] :is(h2, h3, h4, h5, h6)::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 1px;
+  background: linear-gradient(to right, var(--ob-sub), rgba(16, 14, 23, 0.15) 45%, rgba(16, 14, 23, 0));
+}
+
+.markdown-body[data-preview-theme^="obsidianite"] h2 { font-size: 26px; }
+.markdown-body[data-preview-theme^="obsidianite"] h3 { font-size: 22px; }
+.markdown-body[data-preview-theme^="obsidianite"] :is(h4, h5, h6) { font-size: 18px; }
+
+.markdown-body[data-preview-theme^="obsidianite"] strong {
+  color: #e9edf2;
+  font-weight: 700;
+}
+
+.markdown-body[data-preview-theme^="obsidianite"] blockquote {
+  position: relative;
+  margin: 1.1em 0;
+  padding: 16px 22px 16px 50px;
+  border: 1px solid rgba(14, 210, 247, 0.42);
+  border-radius: 2px;
+  background: var(--ob-panel);
+  color: #d1d6df;
+}
+
+.markdown-body[data-preview-theme^="obsidianite"] blockquote::before {
+  content: "//";
+  position: absolute;
+  top: 18px;
+  left: 17px;
+  color: var(--ob-accent);
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.markdown-body[data-preview-theme^="obsidianite"] hr {
+  position: relative;
+  height: 1px;
+  margin: 3.4em 0;
+  border: 0;
+  background: linear-gradient(to right, transparent, rgba(14, 210, 247, 0.65), transparent);
+}
+
+.markdown-body[data-preview-theme^="obsidianite"] hr::after {
+  content: "§";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  display: block;
+  padding: 0 0.55em;
+  transform: translate(-50%, -50%) rotate(60deg);
+  background: var(--ob-bg);
+  color: var(--ob-sub);
+  font-size: 1.1em;
+  line-height: 1;
+}
+
+/* Obsidianite list guides + tasks. */
+.markdown-body[data-preview-theme^="obsidianite"] ul {
+  position: relative;
+  margin: 0.5em 0 0.9em;
+  padding-left: 1.7em;
+  list-style: none;
+}
+
+.markdown-body[data-preview-theme^="obsidianite"] li {
+  position: relative;
+  margin: 0.15em 0;
+  padding-left: 0;
+}
+
+.markdown-body[data-preview-theme^="obsidianite"] ul > li:not(.task-list-item)::before {
+  content: "";
+  position: absolute;
+  top: 0.58em;
+  left: -1.3em;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--ob-accent);
+}
+
+.markdown-body[data-preview-theme^="obsidianite"] ul > li:not(.task-list-item):has(> ul)::after {
+  content: "";
+  position: absolute;
+  top: 1.3em;
+  bottom: -0.15em;
+  left: calc(-1.3em + 2.5px);
+  width: 2px;
+  background: var(--ob-thread);
+  pointer-events: none;
+}
+
+.markdown-body[data-preview-theme^="obsidianite"] ul > li.task-list-item:has(> ul)::after {
+  content: "";
+  position: absolute;
+  top: 1.55em;
+  bottom: -0.15em;
+  left: 6px;
+  width: 2px;
+  background: var(--ob-thread);
+  pointer-events: none;
+}
+
+.markdown-body[data-preview-theme^="obsidianite"] li.task-list-item {
+  min-height: 1.6em;
+  padding-left: 1.3em;
+}
+
+.markdown-body[data-preview-theme^="obsidianite"] .task-list-item .task-list-item-checkbox {
+  position: absolute;
+  z-index: 2;
+  top: 7px;
+  left: 0;
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  border: 2px solid #9e9e9e;
+  border-radius: 3px;
+  background: transparent;
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+  transition: border-color 0.2s, background-color 0.2s;
+}
+
+.markdown-body[data-preview-theme^="obsidianite"] .task-list-item .task-list-item-checkbox:checked {
+  border-color: var(--ob-accent);
+  background-color: var(--ob-accent);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3.2 8.4 6.4 11.6 12.8 4.8' fill='none' stroke='%23212121' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 0.58em 0.58em;
+}
+
+.markdown-body[data-preview-theme^="obsidianite"] .task-list-item > label {
+  position: static;
+}
+
+.markdown-body[data-preview-theme^="obsidianite"] li.task-list-item:has(> label > input:checked) > label {
+  color: rgba(14, 210, 247, 0.82);
+  text-decoration: line-through;
+}
+
+/* Obsidianite list fold triangles. */
+.markdown-body[data-preview-theme^="obsidianite"] .its-list-fold {
+  position: absolute;
+  z-index: 3;
+  top: 7px;
+  left: -34px;
+  display: grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: 0;
+  border-radius: 3px;
+  background: transparent;
+  color: var(--ob-muted);
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  transition: color 0.15s ease;
+}
+
+.markdown-body[data-preview-theme^="obsidianite"] .its-list-fold::before {
+  content: "";
+  width: 0;
+  height: 0;
+  border-top: 4.5px solid transparent;
+  border-bottom: 4.5px solid transparent;
+  border-left: 6px solid currentColor;
+  transform-origin: 35% 50%;
+}
+
+.markdown-body[data-preview-theme^="obsidianite"] .its-list-fold[aria-expanded="true"]::before {
+  transform: rotate(90deg);
+}
+
+.markdown-body[data-preview-theme^="obsidianite"] .its-list-fold:hover {
+  color: var(--ob-accent);
+}
+
+.markdown-body[data-preview-theme^="obsidianite"] li:hover:not(:has(li:hover)) > .its-list-fold,
+.markdown-body[data-preview-theme^="obsidianite"] li:focus-within > .its-list-fold,
+.markdown-body[data-preview-theme^="obsidianite"] .its-list-fold:focus-visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+@media (hover: none) {
+  .markdown-body[data-preview-theme^="obsidianite"] .its-list-fold {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
+/* Obsidianite ordered lists: the number is the marker; no dot or rail. */
+.markdown-body[data-preview-theme^="obsidianite"] ol {
+  margin: 0.5em 0 0.9em;
+}
+
+.markdown-body[data-preview-theme^="obsidianite"] ol > li::marker {
+  color: var(--ob-accent);
+  font-weight: 600;
+}
+
+.markdown-body[data-preview-theme^="obsidianite"] ol > li > .its-list-fold {
+  left: -3em;
+}
+
+/* Obsidianite table. Explicit dark surfaces keep GitHub's light table
+   variables from showing through (same host-bleed issue as Maple Light). */
+.markdown-body[data-preview-theme^="obsidianite"] table {
+  display: table;
+  width: 100%;
+  margin: 1.2em 0;
+  border-collapse: collapse;
+  background: var(--ob-panel);
+  color: var(--ob-text);
+  font-size: 0.92em;
+}
+
+.markdown-body[data-preview-theme^="obsidianite"] th,
+.markdown-body[data-preview-theme^="obsidianite"] td {
+  padding: 9px 12px;
+  border: 1px solid rgba(14, 210, 247, 0.18);
+  text-align: left;
+  vertical-align: top;
+}
+
+.markdown-body[data-preview-theme^="obsidianite"] thead tr,
+.markdown-body[data-preview-theme^="obsidianite"] th {
+  background: color-mix(in srgb, var(--ob-accent) 7%, var(--ob-panel));
+  color: var(--ob-accent);
+  font-weight: 600;
+}
+
+/* Obsidianite keeps border-collapse: collapse, so the stuck header needs its
+   own divider; the mixed background above is already opaque. */
+.markdown-body[data-preview-theme^="obsidianite"] thead th {
+  box-shadow: inset 0 -1px 0 rgba(14, 210, 247, 0.35);
+}
+
+.markdown-body[data-preview-theme^="obsidianite"] td {
+  background: var(--ob-panel);
+  color: var(--ob-text);
+}
+
+.markdown-body[data-preview-theme^="obsidianite"] tr:nth-child(even) td {
+  background: color-mix(in srgb, var(--ob-accent) 4%, var(--ob-panel));
+}
+
+.markdown-body[data-preview-theme^="obsidianite"] :is(th, td) code {
+  background: rgba(14, 210, 247, 0.1);
+}
+
+/* ==========================================================================
+   Obsidianite Brackets (copy of Obsidianite)
+   ========================================================================== */
+.markdown-body[data-preview-theme="obsidianite-bracket"] {
+  --ob-brace: rgba(14, 210, 247, 0.3);
+}
+
+.markdown-body[data-preview-theme="obsidianite-bracket"] ul {
+  padding-left: 2.5em;
+}
+
+.markdown-body[data-preview-theme="obsidianite-bracket"] li {
+  margin: 0.18em 0;
+}
+
+/* A smooth parenthesis wrapping this item and every descendant. */
+.markdown-body[data-preview-theme="obsidianite-bracket"] li::after,
+.markdown-body[data-preview-theme="obsidianite-bracket"] li:not(.task-list-item):has(> ul)::after,
+.markdown-body[data-preview-theme="obsidianite-bracket"] li.task-list-item:has(> ul)::after {
+  content: "";
+  position: absolute;
+  top: 0.12em;
+  bottom: 0.08em;
+  left: -0.83em;
+  width: 0.42em;
+  height: auto;
+  border: 0;
+  border-top: 2px solid var(--ob-brace);
+  border-bottom: 2px solid var(--ob-brace);
+  border-left: 2px solid var(--ob-brace);
+  border-radius: 0.42em 0 0 0.42em / 0.75em 0 0 0.75em;
+  background: none;
+  pointer-events: none;
+}
+
+/* Level markers shrink one step per level. */
+.markdown-body[data-preview-theme="obsidianite-bracket"] ul > li:not(.task-list-item)::before {
+  top: 0.52em;
+  left: -1.95em;
+  width: 9px;
+  height: 9px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--ob-accent);
+}
+
+.markdown-body[data-preview-theme="obsidianite-bracket"] ul ul > li:not(.task-list-item)::before {
+  top: 0.57em;
+  left: -1.9em;
+  width: 7.5px;
+  height: 7.5px;
+  border: 1.5px solid var(--ob-accent);
+  background: transparent;
+}
+
+.markdown-body[data-preview-theme="obsidianite-bracket"] ul ul ul > li:not(.task-list-item)::before {
+  top: 0.61em;
+  left: -1.85em;
+  width: 6px;
+  height: 6px;
+  border: 0;
+  border-radius: 1px;
+  background: var(--ob-accent);
+}
+
+.markdown-body[data-preview-theme="obsidianite-bracket"] ul ul ul ul > li:not(.task-list-item)::before {
+  top: 0.64em;
+  left: -1.8em;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+}
+
+/* Ordered lists: the number stays outside, the bracket starts after it. */
+.markdown-body[data-preview-theme="obsidianite-bracket"] ol > li {
+  padding-left: 1.25em;
+}
+
+.markdown-body[data-preview-theme="obsidianite-bracket"] ol > li::after,
+.markdown-body[data-preview-theme="obsidianite-bracket"] ol > li:not(.task-list-item):has(> ul)::after,
+.markdown-body[data-preview-theme="obsidianite-bracket"] ol > li.task-list-item:has(> ul)::after {
+  left: 0.25em;
+}
+
+.markdown-body[data-preview-theme="obsidianite-bracket"] li.task-list-item {
+  min-height: 1.7em;
+  padding-left: 0;
+}
+
+.markdown-body[data-preview-theme="obsidianite-bracket"] ol > li > .its-list-fold {
+  left: -2.9em;
+}
+
+.markdown-body[data-preview-theme="obsidianite-bracket"] .task-list-item .task-list-item-checkbox {
+  top: 7px;
+  left: -37px;
+}
+
+.markdown-body[data-preview-theme="obsidianite-bracket"] .its-list-fold {
+  left: -58px;
+}
+
+/* ==========================================================================
+   Tone-driven fenced-code tokens
+   MarkEdit-preview applies GitHub's light highlight.js palette when the host
+   appearance is light, which leaves strings/comments nearly invisible on a dark
+   preview theme. Every token color now comes from the --code-* variables, so the
+   palette follows .markdown-body[data-theme-pack-tone] instead of one theme.
+   ========================================================================== */
+.markdown-body[data-preview-theme] pre code.hljs {
+  color: var(--code-fg);
+  background: transparent;
+}
+
+.markdown-body[data-preview-theme] :is(.hljs-doctag, .hljs-keyword, .hljs-template-tag, .hljs-template-variable, .hljs-type, .hljs-variable.language_) {
+  color: var(--code-keyword);
+}
+
+.markdown-body[data-preview-theme] :is(.hljs-title, .hljs-title.class_, .hljs-title.class_.inherited__, .hljs-title.function_) {
+  color: var(--code-entity);
+}
+
+.markdown-body[data-preview-theme] :is(.hljs-attr, .hljs-attribute, .hljs-literal, .hljs-meta, .hljs-number, .hljs-operator, .hljs-variable, .hljs-selector-attr, .hljs-selector-class, .hljs-selector-id) {
+  color: var(--code-constant);
+}
+
+.markdown-body[data-preview-theme] :is(.hljs-regexp, .hljs-string) {
+  color: var(--code-string);
+}
+
+.markdown-body[data-preview-theme] :is(.hljs-built_in, .hljs-symbol) {
+  color: var(--code-symbol);
+}
+
+.markdown-body[data-preview-theme] :is(.hljs-comment, .hljs-code, .hljs-formula) {
+  color: var(--code-comment);
+}
+
+.markdown-body[data-preview-theme] :is(.hljs-name, .hljs-quote, .hljs-selector-tag, .hljs-selector-pseudo) {
+  color: var(--code-tag);
+}
+
+.markdown-body[data-preview-theme] .hljs-subst {
+  color: var(--code-fg);
+}
+
+.markdown-body[data-preview-theme] .hljs-section {
+  color: var(--code-section);
+  font-weight: bold;
+}
+
+.markdown-body[data-preview-theme] .hljs-bullet {
+  color: var(--code-bullet);
+}
+
+.markdown-body[data-preview-theme] .hljs-emphasis {
+  color: var(--code-fg);
+  font-style: italic;
+}
+
+.markdown-body[data-preview-theme] .hljs-strong {
+  color: var(--code-fg);
+  font-weight: bold;
+}
+
+.markdown-body[data-preview-theme] .hljs-addition {
+  color: var(--code-addition);
+  background-color: var(--code-addition-bg);
+}
+
+.markdown-body[data-preview-theme] .hljs-deletion {
+  color: var(--code-deletion);
+  background-color: var(--code-deletion-bg);
+}
+
+/* ==========================================================================
+   Mermaid diagrams that disagree with their theme
+   MarkEdit-preview initializes mermaid from the OS appearance, so the diagram
+   palette follows the host, never the preview theme. The plugin sets
+   [data-theme-pack-mermaid-paint] when the two disagree, or whenever the theme
+   is dark so the diagrams keep the theme's own colors. A light theme on a light
+   host is left alone, which keeps classDef fills intact.
+   ========================================================================== */
+.markdown-body[data-preview-theme][data-theme-pack-mermaid-paint] .mermaid svg {
+  color: var(--mermaid-text) !important;
+  background: transparent;
+}
+
+.markdown-body[data-preview-theme][data-theme-pack-mermaid-paint] .mermaid svg * {
+  filter: none !important;
+}
+
+.markdown-body[data-preview-theme][data-theme-pack-mermaid-paint] .mermaid svg :is(text, tspan, .messageText, .labelText, .labelText > tspan, .loopText, .loopText > tspan, .sectionTitle, .sectionTitle > tspan, .nodeLabel, .clusterLabel, .title) {
+  fill: var(--mermaid-text) !important;
+  stroke: none !important;
+  color: var(--mermaid-text) !important;
+}
+
+.markdown-body[data-preview-theme][data-theme-pack-mermaid-paint] .mermaid svg :is(.noteText, .noteText > tspan) {
+  fill: var(--mermaid-note-text) !important;
+  color: var(--mermaid-note-text) !important;
+}
+
+.markdown-body[data-preview-theme][data-theme-pack-mermaid-paint] .mermaid svg :is(.actor, .actor-box rect, .actor-bottom, .actor-top, .labelBox, .activation0, .activation1, .activation2, .node rect, .node polygon, .node circle, g rect.rect) {
+  fill: var(--mermaid-panel-strong) !important;
+  stroke: var(--mermaid-border) !important;
+}
+
+.markdown-body[data-preview-theme][data-theme-pack-mermaid-paint] .mermaid svg circle {
+  fill: var(--mermaid-panel-strong) !important;
+  stroke: var(--mermaid-border) !important;
+}
+
+.markdown-body[data-preview-theme][data-theme-pack-mermaid-paint] .mermaid svg :is(.edgeLabel rect, .labelBkg, .edgeLabelBackground) {
+  fill: var(--mermaid-panel) !important;
+  stroke: var(--mermaid-border) !important;
+}
+
+.markdown-body[data-preview-theme][data-theme-pack-mermaid-paint] .mermaid svg .note {
+  fill: var(--mermaid-note-bg) !important;
+  stroke: var(--mermaid-note-border) !important;
+}
+
+.markdown-body[data-preview-theme][data-theme-pack-mermaid-paint] .mermaid svg .cluster rect {
+  fill: var(--mermaid-cluster) !important;
+  stroke: var(--mermaid-border) !important;
+}
+
+.markdown-body[data-preview-theme][data-theme-pack-mermaid-paint] .mermaid svg :is(.actor-line, .messageLine0, .messageLine1, .flowchart-link, .edgePaths path, .edgePath path) {
+  stroke: var(--mermaid-line) !important;
+}
+
+.markdown-body[data-preview-theme][data-theme-pack-mermaid-paint] .mermaid svg line {
+  fill: transparent !important;
+  stroke: var(--mermaid-line) !important;
+}
+
+.markdown-body[data-preview-theme][data-theme-pack-mermaid-paint] .mermaid svg .loopLine {
+  stroke: var(--mermaid-line) !important;
+  fill: var(--mermaid-line) !important;
+}
+
+.markdown-body[data-preview-theme][data-theme-pack-mermaid-paint] .mermaid svg :is(.marker, .error-icon, [id$="-arrowhead"] path, [id$="-crosshead"] path) {
+  fill: var(--mermaid-line) !important;
+  stroke: var(--mermaid-line) !important;
+}
+
+.markdown-body[data-preview-theme][data-theme-pack-mermaid-paint] .mermaid svg :is(.edgeLabel, .edgeLabel p, .edgeLabel span, .edgeLabel div, .node foreignObject div) {
+  background: var(--mermaid-panel) !important;
+  color: var(--mermaid-text) !important;
+}
+
+.markdown-body[data-preview-theme][data-theme-pack-mermaid-paint] .mermaid svg [id$="-sequencenumber"] {
+  fill: var(--mermaid-text) !important;
+}
+`;
+
+const VERSION = "1.6.0";
+const SETTINGS_KEY = "extension.markeditThemePack";
+const STYLE_ID = "markedit-theme-pack-style";
+const MARKER_CLASS = "theme-pack-decorated-marker";
+const THEME_ATTR = "data-preview-theme";
+const TONE_ATTR = "data-theme-pack-tone";
+const MERMAID_PAINT_ATTR = "data-theme-pack-mermaid-paint";
+const STICKY_ATTR = "data-theme-pack-table-sticky";
+const SURFACE_ATTR = "data-theme-pack-surface";
+const STATE_FILE = ".markedit-theme-pack.json";
+const FOLD_MENU_TITLE = "折叠层级";
+
+// tone: how bright the theme itself is. "auto" follows the system appearance,
+// which is what ITS does; the resolved value is written to TONE_ATTR and every
+// derived palette (code tokens, mermaid) reads its colors from it, so a new
+// theme only needs a tone, not a hand-written token list.
+// "none" is not a theme: it strips every pack attribute so MarkEdit-preview's
+// GitHub base — and any other installed theme extension — styles the preview.
+const THEMES = [
+  { id: "none", label: "默认（不套用）", tone: "auto" },
+  { id: "its", label: "ITS", tone: "auto" },
+  { id: "maple-light", label: "Maple Light", tone: "light" },
+  { id: "maple-dark", label: "Maple Dark", tone: "dark" },
+  { id: "obsidianite", label: "Obsidianite", tone: "dark" },
+  { id: "obsidianite-bracket", label: "Obsidianite Brackets", tone: "dark" },
+];
+const NO_THEME = "none";
+const THEME_IDS = new Set(THEMES.map((theme) => theme.id));
+const TONE_BY_THEME = new Map(THEMES.map((theme) => [theme.id, theme.tone]));
+const DEFAULT_THEME = "its";
+const THEME_BACKGROUNDS = {
+  its: { light: "#ffffff", dark: "#101418" },
+  "maple-light": { light: "#fbf8f3", dark: "#fbf8f3" },
+  "maple-dark": { light: "#0d0f11", dark: "#0d0f11" },
+  obsidianite: { light: "#100e17", dark: "#100e17" },
+  "obsidianite-bracket": { light: "#100e17", dark: "#100e17" },
+};
+
+const DEFAULTS = {
+  theme: DEFAULT_THEME,
+  autoFold: true,
+  autoFoldLevel: 3,
+  listFolding: true,
+  stickyTableHeader: true,
+  debug: false,
+};
+
+const settings = readSettings();
+settings.theme = normalizeTheme(settings.theme);
+settings.autoFold = settings.autoFold !== false;
+const configuredFoldLevel = Number(settings.autoFoldLevel);
+settings.autoFoldLevel = Number.isFinite(configuredFoldLevel) && configuredFoldLevel > 0
+  ? configuredFoldLevel
+  : DEFAULTS.autoFoldLevel;
+settings.listFolding = settings.listFolding !== false;
+settings.stickyTableHeader = settings.stickyTableHeader !== false;
+settings.debug = settings.debug === true;
+
+let currentTheme = settings.theme;
+let statePath = null;
+let previewPane = null;
+let paneObserver = null;
+let bodyObserver = null;
+let decorateTimer = null;
+let decorating = false;
+let decorateSerial = 0;
+let currentBranch = null;
+let persistTimer = null;
+let persistChain = Promise.resolve();
+let paneVisible = null;
+let pendingPreviewLine = null;
+let previewScrollTimer = null;
+let previewScrollToken = 0;
+let editorSnapshotState = null;
+let editorSnapshotView = null;
+let editorSnapshot = null;
+
+const headingState = new Map();
+const listState = new Map();
+
+// MarkEdit exposes its bundled CodeMirror modules through the extension
+// wrapper's require(). The browser harness passes a stub, so treat source-mode
+// folding as optional rather than failing the whole preview theme pack.
+let cmFold = null;
+try {
+  const language = require("@codemirror/language");
+  if (
+    language
+    && language.foldEffect
+    && language.unfoldEffect
+    && language.foldedRanges
+    && language.foldState
+    && language.foldable
+    && language.syntaxTree
+  ) {
+    cmFold = language;
+  }
+} catch {
+  // Preview-only environments do not provide CodeMirror.
+}
+
+injectStyle();
+registerMenu();
+watchSystemTone();
+loadPersistedTheme();
+
+if (typeof MarkEdit.onEditorReady === "function") {
+  MarkEdit.onEditorReady(() => {
+    headingState.clear();
+    listState.clear();
+    clearBranch();
+    setupPane();
+  });
+}
+
+// The editor-ready callback can fire before this script is evaluated.
+setTimeout(setupPane, 300);
+
+function readSettings() {
+  try {
+    const value = MarkEdit.userSettings && MarkEdit.userSettings[SETTINGS_KEY];
+    return value && typeof value === "object" ? value : {};
+  } catch {
+    return {};
+  }
+}
+
+function normalizeTheme(value) {
+  return THEME_IDS.has(value) ? value : DEFAULT_THEME;
+}
+
+function toneOf(theme) {
+  return TONE_BY_THEME.get(theme) || "light";
+}
+
+function systemIsDark() {
+  try {
+    return window.matchMedia("(prefers-color-scheme: dark)").matches === true;
+  } catch {
+    return false;
+  }
+}
+
+function resolveTone(theme) {
+  const tone = toneOf(theme);
+  return tone === "auto" ? (systemIsDark() ? "dark" : "light") : tone;
+}
+
+function currentTone() {
+  return resolveTone(currentTheme);
+}
+
+// MarkEdit-preview initializes mermaid from the OS appearance, so a dark theme
+// on a light host gets light-lavender diagrams that read as black-on-black.
+// Only dark themes are repainted: mermaid's own default palette (lavender
+// actors, yellow notes) is the look people expect from a light theme, so a
+// light theme keeps it even when the host is dark and the diagram turns into
+// mermaid's dark variant. Repainting light themes flattened classDef fills and
+// washed the diagrams into the page background.
+function shouldPaintMermaid(tone) {
+  return tone === "dark";
+}
+
+function themeMenuItem(theme) {
+  return {
+    title: theme.label,
+    action: () => selectTheme(theme.id),
+    state: () => ({ isSelected: currentTheme === theme.id }),
+  };
+}
+
+function registerMenu() {
+  if (typeof MarkEdit.addMainMenuItem !== "function") {
+    return;
+  }
+
+  MarkEdit.addMainMenuItem([
+    {
+      title: "Preview Theme",
+      children: [
+        // The "不套用" entry first, then the five built-in themes.
+        themeMenuItem(THEMES[0]),
+        { separator: true },
+        ...THEMES.slice(1).map(themeMenuItem),
+        { separator: true },
+        {
+          title: "导出当前主题 HTML…",
+          action: () => {
+            void exportThemedHtml();
+          },
+        },
+      ],
+    },
+    {
+      title: FOLD_MENU_TITLE,
+      icon: "chevron.up.chevron.down",
+      children: [
+        {
+          title: "全部折叠",
+          action: () => applyHeadingFold(0),
+          state: () => headingFoldState(0),
+        },
+        {
+          title: "全部打开",
+          action: () => applyHeadingFold(-1),
+          state: () => headingFoldState(-1),
+        },
+        { separator: true },
+        ...[1, 2, 3, 4, 5, 6].map((level) => ({
+          title: "折叠到 H" + level,
+          action: () => applyHeadingFold(level),
+          state: () => headingFoldState(level),
+        })),
+      ],
+    },
+  ]);
+}
+
+function selectTheme(theme, options = {}) {
+  const next = normalizeTheme(theme);
+  const changed = next !== currentTheme;
+  currentTheme = next;
+
+  const pane = previewPane || findPane();
+  if (pane !== null) {
+    applyThemeToPane(pane);
+    if (changed) {
+      clearBranch();
+      resetDecorations(pane);
+      scheduleDecorate(0);
+    }
+  }
+
+  if (options.persist !== false) {
+    persistTheme();
+  }
+}
+
+async function exportThemedHtml() {
+  try {
+    const getHtml = window.MarkEditGetHtml;
+    if (typeof getHtml !== "function") {
+      throw new Error("未找到 MarkEdit-preview 的 MarkEditGetHtml，请先安装并启用 MarkEdit-preview。");
+    }
+
+    const html = await getHtml(true);
+    if (typeof html !== "string" || !html.includes("markdown-body")) {
+      throw new Error("MarkEdit-preview 没有返回可用的 HTML。");
+    }
+
+    const doc = new DOMParser().parseFromString(html, "text/html");
+    const wrapper = doc.body.querySelector(".markdown-body");
+    if (wrapper === null) {
+      throw new Error("导出的 HTML 中找不到 .markdown-body。");
+    }
+
+    // The exported SVG/CSS palette has to match what the user was looking at, so
+    // the attributes are copied exactly as the live pane has them.
+    const tone = currentTheme === NO_THEME ? (systemIsDark() ? "dark" : "light") : currentTone();
+    if (currentTheme !== NO_THEME) {
+      wrapper.setAttribute(THEME_ATTR, currentTheme);
+      wrapper.setAttribute(TONE_ATTR, tone);
+      if (shouldPaintMermaid(tone)) {
+        wrapper.setAttribute(MERMAID_PAINT_ATTR, "true");
+      }
+      doc.documentElement.setAttribute(SURFACE_ATTR, currentTheme);
+      doc.body.setAttribute(SURFACE_ATTR, currentTheme);
+    }
+    if (settings.stickyTableHeader) {
+      wrapper.setAttribute(STICKY_ATTR, "true");
+    }
+
+    const info = typeof MarkEdit.getFileInfo === "function"
+      ? await MarkEdit.getFileInfo()
+      : undefined;
+    await inlineExportImages(doc, info?.parentPath);
+
+    const pane = previewPane || findPane();
+    const background = exportBackground(pane, tone);
+    const style = doc.createElement("style");
+    style.textContent = CSS + "\n" + exportPageCss(background, tone);
+    doc.body.appendChild(style);
+
+    const finalHtml = "<!doctype html>\n" + doc.documentElement.outerHTML;
+    const fileName = exportFileBaseName(info?.filePath)
+      + "-" + (currentTheme === NO_THEME ? "default" : currentTheme)
+      + ".html";
+
+    if (typeof MarkEdit.showSavePanel !== "function") {
+      await navigator.clipboard.writeText(finalHtml);
+      showAlert("已复制 HTML", "当前 MarkEdit 不支持保存面板，主题 HTML 已复制到剪贴板。");
+      return;
+    }
+
+    MarkEdit.showSavePanel({ fileName, string: finalHtml });
+  } catch (error) {
+    console.error("[MarkEdit Theme Pack] export HTML failed", error);
+    showAlert("导出失败", error instanceof Error ? error.message : String(error));
+  }
+}
+
+function exportBackground(pane, tone) {
+  if (pane !== null) {
+    const color = getComputedStyle(pane).backgroundColor;
+    if (color && color !== "transparent" && !/rgba\([^)]*,\s*0\)$/.test(color)) {
+      return color;
+    }
+  }
+
+  const backgrounds = THEME_BACKGROUNDS[currentTheme];
+  if (!backgrounds) {
+    // "不套用" has no page color of its own: fall back to the host canvas.
+    return systemIsDark() ? "#0d1117" : "#ffffff";
+  }
+  return tone === "dark" ? backgrounds.dark : backgrounds.light;
+}
+
+function exportPageCss(background, tone) {
+  return `
+html,
+body {
+  background: ${background} !important;
+  color-scheme: ${tone === "dark" ? "dark" : "light"};
+}
+
+body {
+  margin: 0;
+}
+
+.markdown-body[data-preview-theme] {
+  max-width: 900px;
+  margin: 0 auto;
+  min-height: 100vh;
+}
+
+@media print {
+  @page {
+    size: A4;
+    margin: 0;
+  }
+
+  html,
+  body {
+    background: ${background} !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .markdown-body[data-preview-theme] {
+    max-width: none;
+    min-height: 0;
+    margin: 0;
+    padding: 16mm 14mm !important;
+  }
+
+  .markdown-body[data-preview-theme] pre,
+  .markdown-body[data-preview-theme] pre code {
+    overflow: visible !important;
+    white-space: pre-wrap !important;
+    overflow-wrap: break-word;
+  }
+
+  table,
+  blockquote,
+  img,
+  .katex-display {
+    break-inside: avoid;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    break-after: avoid;
+  }
+}
+`;
+}
+
+function exportFileBaseName(filePath) {
+  if (typeof filePath !== "string" || filePath.length === 0) {
+    return "untitled";
+  }
+  const leaf = filePath.split("/").pop() || "untitled";
+  return leaf.replace(/\.(md|markdown|txt|mmd|mermaid|tex)$/i, "") || "untitled";
+}
+
+async function inlineExportImages(doc, basePath) {
+  if (!basePath || typeof MarkEdit.getFileObject !== "function") {
+    return;
+  }
+
+  const images = [...doc.querySelectorAll(".markdown-body img[src]")];
+  await Promise.all(images.map(async (image) => {
+    const src = image.getAttribute("src") || "";
+    if (!src || src.startsWith("data:") || /^(?:https?:)?\/\//i.test(src)) {
+      return;
+    }
+
+    const resolved = resolveExportPath(basePath, src);
+    if (resolved === null) {
+      return;
+    }
+
+    try {
+      const file = await MarkEdit.getFileObject(resolved);
+      if (!file || typeof file.data !== "string" || file.data.length === 0) {
+        return;
+      }
+      const mime = typeof file.mimeType === "string" && file.mimeType.startsWith("image/")
+        ? file.mimeType
+        : "image/png";
+      image.setAttribute("src", `data:${mime};base64,${file.data}`);
+    } catch {
+      // Leave the original relative URL if the file cannot be read.
+    }
+  }));
+}
+
+function resolveExportPath(basePath, src) {
+  let path = src.split("#")[0].split("?")[0];
+  if (!path) {
+    return null;
+  }
+  try {
+    path = decodeURIComponent(path);
+  } catch {
+    // Keep the original path if it is not valid percent-encoding.
+  }
+  path = path.replace(/^file:\/\//i, "");
+
+  const combined = path.startsWith("/")
+    ? path
+    : basePath.replace(/\/+$/, "") + "/" + path;
+  const parts = [];
+  for (const part of combined.split("/")) {
+    if (!part || part === ".") {
+      continue;
+    }
+    if (part === "..") {
+      parts.pop();
+      continue;
+    }
+    parts.push(part);
+  }
+  return "/" + parts.join("/");
+}
+
+function showAlert(title, message) {
+  if (typeof MarkEdit.showAlert === "function") {
+    MarkEdit.showAlert({ title, message });
+  } else {
+    console.error("[MarkEdit Theme Pack] " + title + ": " + message);
+  }
+}
+
+async function loadPersistedTheme() {
+  try {
+    const base = getDocumentsPath();
+    if (base === undefined) {
+      return;
+    }
+
+    statePath = base.replace(/\/$/, "") + "/" + STATE_FILE;
+    if (typeof MarkEdit.getFileContent !== "function") {
+      return;
+    }
+
+    const raw = await MarkEdit.getFileContent(statePath);
+    if (raw === undefined || raw === null || raw === "") {
+      return;
+    }
+
+    const data = JSON.parse(raw);
+    if (data && THEME_IDS.has(data.theme) && data.theme !== currentTheme) {
+      selectTheme(data.theme, { persist: false });
+    }
+  } catch {
+    // Missing state file is the normal first-run case.
+  }
+}
+
+function persistTheme() {
+  // Debounce and serialize writes so rapid menu switches cannot land out of order.
+  clearTimeout(persistTimer);
+  persistTimer = setTimeout(() => {
+    persistTimer = null;
+    const theme = currentTheme;
+    persistChain = persistChain
+      .catch(() => {})
+      .then(() => writePersistedTheme(theme));
+  }, 120);
+}
+
+async function writePersistedTheme(theme) {
+  try {
+    const base = getDocumentsPath();
+    if (base === undefined || typeof MarkEdit.createFile !== "function") {
+      return;
+    }
+
+    statePath = base.replace(/\/$/, "") + "/" + STATE_FILE;
+    await MarkEdit.createFile({
+      path: statePath,
+      string: JSON.stringify({ theme }, null, 2) + "\n",
+      overwrites: true,
+    });
+  } catch (error) {
+    console.error("[MarkEdit Theme Pack] failed to persist theme", error);
+  }
+}
+
+function getDocumentsPath() {
+  try {
+    return typeof MarkEdit.getDirectoryPath === "function"
+      ? MarkEdit.getDirectoryPath("documents")
+      : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function injectStyle() {
+  let style = document.getElementById(STYLE_ID);
+  if (style === null) {
+    style = document.createElement("style");
+    style.id = STYLE_ID;
+    document.head.appendChild(style);
+  }
+  style.textContent = CSS;
+}
+
+function findPane() {
+  return document.querySelector('body > .markdown-body:not([aria-hidden="true"])');
+}
+
+function applyThemeToPane(pane) {
+  if (currentTheme === NO_THEME) {
+    // Every pack rule is scoped to [data-preview-theme], so dropping the
+    // attributes hands the preview back to GitHub base / other theme plugins.
+    pane.removeAttribute(THEME_ATTR);
+    pane.removeAttribute(TONE_ATTR);
+    pane.removeAttribute(MERMAID_PAINT_ATTR);
+    pane.style.colorScheme = "";
+  } else {
+    const tone = currentTone();
+    pane.setAttribute(THEME_ATTR, currentTheme);
+    pane.setAttribute(TONE_ATTR, tone);
+    if (shouldPaintMermaid(tone)) {
+      pane.setAttribute(MERMAID_PAINT_ATTR, "true");
+    } else {
+      pane.removeAttribute(MERMAID_PAINT_ATTR);
+    }
+    pane.style.colorScheme = tone;
+  }
+
+  applyStickyTables(pane);
+  syncSurface();
+}
+
+// Sticky headers are behavior rather than theming, so the switch has its own
+// attribute and its CSS reads MarkEdit-preview's GitHub variables. That keeps it
+// working in the "不套用" mode and under other people's themes, while our own
+// themes still win on the header colors through their more specific rules.
+function applyStickyTables(pane) {
+  if (settings.stickyTableHeader) {
+    pane.setAttribute(STICKY_ATTR, "true");
+  } else {
+    pane.removeAttribute(STICKY_ATTR);
+  }
+}
+
+// The palette keys on the resolved tone and on the host appearance, so flipping
+// the system appearance has to re-apply every theme, not only the auto ones.
+function watchSystemTone() {
+  if (typeof window.matchMedia !== "function") {
+    return;
+  }
+
+  const query = window.matchMedia("(prefers-color-scheme: dark)");
+  const onChange = () => {
+    const pane = previewPane || findPane();
+    if (pane !== null) {
+      applyThemeToPane(pane);
+    }
+  };
+
+  if (typeof query.addEventListener === "function") {
+    query.addEventListener("change", onChange);
+  } else if (typeof query.addListener === "function") {
+    query.addListener(onChange);
+  }
+}
+
+function syncSurface() {
+  const pane = previewPane || findPane();
+  const isOverlay = pane !== null
+    && pane.classList.contains("overlay")
+    && getComputedStyle(pane).display !== "none";
+  const surface = isOverlay && currentTheme !== "its" && currentTheme !== NO_THEME ? currentTheme : "";
+  for (const element of [document.documentElement, document.body]) {
+    if (surface === "") {
+      element.removeAttribute(SURFACE_ATTR);
+    } else {
+      element.setAttribute(SURFACE_ATTR, surface);
+    }
+  }
+
+  const visible = pane !== null && isElementVisible(pane);
+  if (pane !== null) {
+    if (paneVisible === false && visible) {
+      queuePreviewScroll(pane);
+    }
+    if (!visible) {
+      pendingPreviewLine = null;
+      clearTimeout(previewScrollTimer);
+      previewScrollTimer = null;
+    }
+    paneVisible = visible;
+  } else {
+    paneVisible = null;
+  }
+}
+
+function queuePreviewScroll(pane) {
+  const line = sourceLineIndex();
+  if (line === null) {
+    return;
+  }
+
+  pendingPreviewLine = line;
+  const token = ++previewScrollToken;
+  clearTimeout(previewScrollTimer);
+  previewScrollTimer = setTimeout(() => {
+    if (token !== previewScrollToken) {
+      return;
+    }
+    applyPendingPreviewScroll(pane, 0);
+  }, 80);
+}
+
+function applyPendingPreviewScroll(pane, attempt) {
+  if (pendingPreviewLine === null || !pane.isConnected || !isElementVisible(pane)) {
+    return;
+  }
+
+  const target = findPreviewLine(pane, pendingPreviewLine);
+  if (target === null) {
+    if (attempt < 10) {
+      previewScrollTimer = setTimeout(() => applyPendingPreviewScroll(pane, attempt + 1), 60);
+    }
+    return;
+  }
+
+  const paneRect = pane.getBoundingClientRect();
+  const targetRect = target.getBoundingClientRect();
+  if (targetRect.width === 0 && targetRect.height === 0) {
+    if (attempt < 10) {
+      previewScrollTimer = setTimeout(() => applyPendingPreviewScroll(pane, attempt + 1), 60);
+    }
+    return;
+  }
+
+  const sync = window.__markeditBidirectionalPreviewSync__;
+  if (sync && sync.isActive !== false && typeof sync.beginPreviewScroll === "function") {
+    sync.beginPreviewScroll({ animated: false });
+  }
+  pane.scrollTop = Math.max(0, pane.scrollTop + targetRect.top - paneRect.top - 10);
+  pendingPreviewLine = null;
+}
+
+function findPreviewLine(pane, line) {
+  const nodes = [...pane.querySelectorAll("[data-line-from][data-line-to]")];
+  let best = null;
+  for (const node of nodes) {
+    if (node.getClientRects().length === 0) {
+      continue;
+    }
+    const from = Number(node.getAttribute("data-line-from"));
+    const to = Number(node.getAttribute("data-line-to"));
+    if (!Number.isFinite(from) || !Number.isFinite(to)) {
+      continue;
+    }
+    if (line < from || line > to) {
+      continue;
+    }
+    const span = to - from;
+    const bestSpan = best === null
+      ? Infinity
+      : Number(best.getAttribute("data-line-to")) - Number(best.getAttribute("data-line-from"));
+    if (span < bestSpan) {
+      best = node;
+    }
+  }
+  if (best !== null) {
+    return best;
+  }
+
+  let fallback = null;
+  for (const node of nodes) {
+    if (node.getClientRects().length === 0) {
+      continue;
+    }
+    const from = Number(node.getAttribute("data-line-from"));
+    if (Number.isFinite(from) && from <= line) {
+      if (fallback === null || from > Number(fallback.getAttribute("data-line-from"))) {
+        fallback = node;
+      }
+    }
+  }
+  return fallback;
+}
+
+function sourceLineIndex() {
+  try {
+    const view = MarkEdit.editorView;
+    if (!view || !view.state || !view.state.doc) {
+      return null;
+    }
+
+    const selection = view.state.selection.main;
+    const lineNumber = view.state.doc.lineAt(selection.head).number - 1;
+    const scrollDOM = view.scrollDOM;
+    if (!scrollDOM) {
+      return lineNumber;
+    }
+
+    const viewport = scrollDOM.getBoundingClientRect();
+    if (viewport.width === 0 || viewport.height === 0) {
+      return lineNumber;
+    }
+
+    if (typeof view.coordsAtPos === "function") {
+      const coords = view.coordsAtPos(selection.head);
+      if (coords && coords.top >= viewport.top && coords.bottom <= viewport.bottom) {
+        return lineNumber;
+      }
+    }
+
+    if (typeof view.posAtCoords === "function") {
+      const topPos = view.posAtCoords({ x: viewport.left + 40, y: viewport.top + 8 });
+      if (topPos !== null && topPos !== undefined) {
+        return view.state.doc.lineAt(topPos).number - 1;
+      }
+    }
+
+    return lineNumber;
+  } catch {
+    return null;
+  }
+}
+
+function setupPane() {
+  const pane = findPane();
+  if (pane === null) {
+    observeBody();
+    return;
+  }
+
+  previewPane = pane;
+  applyThemeToPane(pane);
+  syncSurface();
+
+  if (pane.dataset.themePackBound !== "true") {
+    pane.dataset.themePackBound = "true";
+    pane.addEventListener("click", handleClick);
+    pane.addEventListener("mouseover", handlePointerOver);
+    pane.addEventListener("mouseleave", clearBranch);
+    new MutationObserver(syncSurface).observe(pane, {
+      attributes: true,
+      attributeFilter: ["class", "style", "aria-hidden"],
+    });
+  }
+
+  observePane(pane);
+  scheduleDecorate(0);
+}
+
+function observeBody() {
+  if (bodyObserver !== null) {
+    return;
+  }
+
+  bodyObserver = new MutationObserver(() => {
+    if (findPane() !== null) {
+      bodyObserver.disconnect();
+      bodyObserver = null;
+      setupPane();
+    }
+  });
+
+  bodyObserver.observe(document.body, { childList: true, subtree: true });
+}
+
+function observePane(pane) {
+  if (paneObserver !== null) {
+    paneObserver.disconnect();
+  }
+
+  paneObserver = new MutationObserver(() => {
+    if (pane.querySelector("." + MARKER_CLASS) !== null) {
+      return;
+    }
+    scheduleDecorate(30);
+  });
+
+  paneObserver.observe(pane, { childList: true, subtree: true });
+}
+
+function scheduleDecorate(delay) {
+  clearTimeout(decorateTimer);
+  decorateTimer = setTimeout(() => {
+    decorate().catch((error) => {
+      console.error("[MarkEdit Theme Pack]", error);
+    });
+  }, delay);
+}
+
+async function decorate() {
+  if (decorating) {
+    return;
+  }
+
+  const pane = previewPane || findPane();
+  if (pane === null || pane.querySelector("." + MARKER_CLASS) !== null) {
+    return;
+  }
+
+  decorating = true;
+  try {
+    applyThemeToPane(pane);
+    decorateHeadings(pane);
+    if (settings.listFolding !== false) {
+      decorateLists(pane);
+    }
+
+    const marker = document.createElement("span");
+    marker.className = MARKER_CLASS;
+    marker.hidden = true;
+    pane.appendChild(marker);
+
+    syncSurface();
+
+    if (pendingPreviewLine !== null) {
+      clearTimeout(previewScrollTimer);
+      previewScrollTimer = null;
+      applyPendingPreviewScroll(pane, 0);
+    }
+
+    if (settings.debug === true) {
+      writeDebug(pane);
+    }
+  } finally {
+    decorating = false;
+  }
+}
+
+function decorateHeadings(pane) {
+  const headings = getTopLevelHeadings(pane);
+  const headingKeys = createHeadingKeys(headings);
+  const serial = ++decorateSerial;
+  const records = headings.map((heading, index) => ({
+    heading,
+    index,
+    level: headingLevel(heading),
+    key: headingKeys[index],
+  }));
+
+  // Walk backwards so wrapping a deeper section never invalidates earlier siblings.
+  for (let i = records.length - 1; i >= 0; i -= 1) {
+    const { heading, index, level, key } = records[i];
+    const content = [];
+    let node = heading.nextElementSibling;
+
+    while (node !== null) {
+      if (isHeading(node) && headingLevel(node) <= level) {
+        break;
+      }
+      content.push(node);
+      node = node.nextElementSibling;
+    }
+
+    const button = createFoldButton("heading");
+    button.dataset.itsKey = key;
+    heading.prepend(button);
+
+    if (content.length === 0) {
+      button.disabled = true;
+      button.setAttribute("aria-label", "No content to fold");
+      continue;
+    }
+
+    const wrapper = document.createElement("div");
+    wrapper.className = "its-section-content";
+    wrapper.id = "theme-pack-section-" + serial + "-" + index;
+    heading.after(wrapper);
+    content.forEach((element) => wrapper.appendChild(element));
+
+    button.dataset.itsSection = wrapper.id;
+    button.setAttribute("aria-controls", wrapper.id);
+
+    if (!headingState.has(key)) {
+      const autoFold = currentTheme === "its" && settings.autoFold;
+      headingState.set(key, autoFold && level >= settings.autoFoldLevel);
+    }
+    applyHeadingState(button, wrapper, headingState.get(key));
+  }
+}
+
+function getTopLevelHeadings(pane) {
+  return [...pane.querySelectorAll(":scope > h1, :scope > h2, :scope > h3, :scope > h4, :scope > h5, :scope > h6")];
+}
+
+function createHeadingKeys(headings) {
+  const seen = new Map();
+  return headings.map((heading) => {
+    if (heading.id) {
+      return "h:" + heading.id;
+    }
+
+    const label = headingLabel(heading);
+    const base = "h:" + headingLevel(heading) + ":" + label;
+    const count = (seen.get(base) || 0) + 1;
+    seen.set(base, count);
+    return base + "#" + count;
+  });
+}
+
+function getHeadingFoldEntries(pane) {
+  const entries = [];
+  for (const heading of pane.querySelectorAll("h1, h2, h3, h4, h5, h6")) {
+    const button = heading.querySelector(":scope > .its-heading-fold");
+    if (button === null || !button.dataset.itsSection) {
+      continue;
+    }
+    const wrapper = document.getElementById(button.dataset.itsSection);
+    if (wrapper === null) {
+      continue;
+    }
+    entries.push({
+      level: headingLevel(heading),
+      button,
+      wrapper,
+      key: button.dataset.itsKey,
+    });
+  }
+  return entries;
+}
+
+function isElementVisible(element) {
+  if (element === null || !element.isConnected) {
+    return false;
+  }
+  const style = getComputedStyle(element);
+  if (style.display === "none" || style.visibility === "hidden") {
+    return false;
+  }
+  return element.getClientRects().length > 0;
+}
+
+function visiblePreviewPane() {
+  const pane = previewPane && previewPane.isConnected ? previewPane : findPane();
+  return pane !== null && isElementVisible(pane) ? pane : null;
+}
+
+function visibleEditorView() {
+  if (cmFold === null) {
+    return null;
+  }
+  try {
+    const view = MarkEdit.editorView;
+    if (view && view.state && view.dispatch && isElementVisible(view.dom)) {
+      return view;
+    }
+  } catch {
+    // No editor in this host.
+  }
+  return null;
+}
+
+function activeFoldTarget() {
+  const pane = visiblePreviewPane();
+  if (pane !== null) {
+    return { kind: "preview", pane };
+  }
+  const view = visibleEditorView();
+  if (view !== null) {
+    return { kind: "editor", view };
+  }
+  return null;
+}
+
+function headingFoldState(mode) {
+  const target = activeFoldTarget();
+  if (target === null) {
+    return { isEnabled: false };
+  }
+  if (target.kind === "preview") {
+    return previewHeadingFoldState(target.pane, mode);
+  }
+  return editorHeadingFoldState(target.view, mode);
+}
+
+function applyHeadingFold(mode) {
+  const target = activeFoldTarget();
+  if (target === null) {
+    return;
+  }
+  if (target.kind === "preview") {
+    applyPreviewHeadingFold(target.pane, mode);
+  } else {
+    applyEditorHeadingFold(target.view, mode);
+  }
+}
+
+function sectionEffectivelyHidden(wrapper) {
+  return wrapper.closest(".its-section-content[hidden]") !== null;
+}
+
+function previewHeadingFoldState(pane, mode) {
+  const entries = getHeadingFoldEntries(pane);
+  if (entries.length === 0) {
+    return { isEnabled: false };
+  }
+
+  let isSelected = false;
+  if (mode === 0) {
+    isSelected = entries.every((entry) => sectionEffectivelyHidden(entry.wrapper));
+  } else if (mode === -1) {
+    isSelected = entries.every((entry) => !sectionEffectivelyHidden(entry.wrapper));
+  } else {
+    const target = entries.filter((entry) => entry.level >= mode);
+    if (target.length === 0) {
+      return { isEnabled: false };
+    }
+    isSelected = target.every((entry) => sectionEffectivelyHidden(entry.wrapper))
+      && entries.filter((entry) => entry.level < mode)
+        .every((entry) => !sectionEffectivelyHidden(entry.wrapper));
+  }
+
+  return { isEnabled: true, isSelected };
+}
+
+function applyPreviewHeadingFold(pane, mode) {
+  const entries = getHeadingFoldEntries(pane);
+  entries.forEach(({ level, button, wrapper, key }) => {
+    const collapsed = mode === 0 ? true : mode === -1 ? false : level >= mode;
+    applyHeadingState(button, wrapper, collapsed);
+    if (key) {
+      headingState.set(key, collapsed);
+    }
+  });
+}
+
+function editorHeadingLevel(name) {
+  const match = /^(?:ATX|Setext)Heading([1-6])$/.exec(name);
+  return match === null ? null : Number(match[1]);
+}
+
+function getEditorFoldSnapshot(view) {
+  if (cmFold === null) {
+    return null;
+  }
+  if (editorSnapshot !== null
+    && editorSnapshotState === view.state
+    && editorSnapshotView === view) {
+    return editorSnapshot;
+  }
+
+  let entries = [];
+  const folded = new Map();
+  try {
+    const state = view.state;
+    if (!state.field(cmFold.foldState, false)) {
+      return null;
+    }
+
+    const tree = cmFold.ensureSyntaxTree
+      ? cmFold.ensureSyntaxTree(state, state.doc.length, 250) || cmFold.syntaxTree(state)
+      : cmFold.syntaxTree(state);
+    const seen = new Set();
+    tree.iterate({
+      enter(node) {
+        const level = editorHeadingLevel(node.name);
+        if (level === null) {
+          return;
+        }
+        const line = state.doc.lineAt(node.from);
+        const fold = cmFold.foldable(state, line.from, line.to);
+        if (fold === null || fold.to <= fold.from || seen.has(fold.from)) {
+          return;
+        }
+        seen.add(fold.from);
+        entries.push({ level, lineFrom: line.from, lineTo: line.to, fold });
+      },
+    });
+    entries.sort((a, b) => a.fold.from - b.fold.from);
+
+    const foldedSet = cmFold.foldedRanges(state);
+    if (foldedSet) {
+      foldedSet.between(0, state.doc.length, (from, to) => {
+        folded.set(from, to);
+      });
+    }
+  } catch (error) {
+    console.debug("[MarkEdit Theme Pack] source fold scan failed", error);
+    entries = [];
+  }
+
+  editorSnapshotState = view.state;
+  editorSnapshotView = view;
+  editorSnapshot = { entries, folded };
+  return editorSnapshot;
+}
+
+function desiredEditorFolds(entries, mode) {
+  if (mode === -1) {
+    return [];
+  }
+  // 全部折叠 folds every heading level (nested folds), so unfolding one level
+  // reveals the next level still collapsed. Hx does the same for Hx and deeper.
+  if (mode === 0) {
+    return entries;
+  }
+  return entries.filter((entry) => entry.level >= mode);
+}
+
+function editorHeadingFoldState(view, mode) {
+  const snapshot = getEditorFoldSnapshot(view);
+  if (snapshot === null || snapshot.entries.length === 0) {
+    return { isEnabled: false };
+  }
+  if (mode > 0 && !snapshot.entries.some((entry) => entry.level >= mode)) {
+    return { isEnabled: false };
+  }
+
+  const headingStarts = new Set(snapshot.entries.map((entry) => entry.fold.from));
+  const current = new Set(
+    [...snapshot.folded.keys()].filter((from) => headingStarts.has(from))
+  );
+  const desired = new Set(
+    desiredEditorFolds(snapshot.entries, mode).map((entry) => entry.fold.from)
+  );
+  const isSelected = current.size === desired.size
+    && [...current].every((from) => desired.has(from));
+  return { isEnabled: true, isSelected };
+}
+
+function applyEditorHeadingFold(view, mode) {
+  const snapshot = getEditorFoldSnapshot(view);
+  if (snapshot === null || snapshot.entries.length === 0) {
+    return;
+  }
+
+  const desired = new Map(
+    desiredEditorFolds(snapshot.entries, mode).map((entry) => [entry.fold.from, entry.fold])
+  );
+  const headingStarts = new Set(snapshot.entries.map((entry) => entry.fold.from));
+  const effects = [];
+
+  for (const [from, to] of snapshot.folded) {
+    if (!headingStarts.has(from)) {
+      continue;
+    }
+    const wanted = desired.get(from);
+    if (wanted === undefined || wanted.to !== to) {
+      effects.push(cmFold.unfoldEffect.of({ from, to }));
+    }
+  }
+
+  for (const [from, fold] of desired) {
+    if (snapshot.folded.get(from) !== fold.to) {
+      effects.push(cmFold.foldEffect.of(fold));
+    }
+  }
+
+  if (effects.length > 0) {
+    view.dispatch({ effects });
+  }
+}
+
+function headingLabel(heading) {
+  const clone = heading.cloneNode(true);
+  clone.querySelectorAll(".anchor, .header-anchor, .its-heading-fold").forEach((node) => node.remove());
+  return clone.textContent.trim().replace(/\s+/g, " ");
+}
+
+function decorateLists(pane) {
+  const items = [...pane.querySelectorAll("li")];
+  const seen = new Map();
+
+  items.forEach((item) => {
+    const nested = item.querySelector(":scope > ul");
+    if (nested === null) {
+      return;
+    }
+
+    nested.classList.add("its-nested-list");
+    const key = createListKey(item, seen);
+    const button = createFoldButton("list");
+    button.dataset.itsKey = key;
+    item.prepend(button);
+
+    if (!listState.has(key)) {
+      listState.set(key, false);
+    }
+    applyListState(item, button, listState.get(key));
+  });
+}
+
+function createListKey(item, seen) {
+  const clone = item.cloneNode(true);
+  clone.querySelectorAll(":scope > ul, .its-list-fold").forEach((node) => node.remove());
+  const label = clone.textContent.trim().replace(/\s+/g, " ").slice(0, 80);
+  const count = (seen.get(label) || 0) + 1;
+  seen.set(label, count);
+  return "l:" + label + "#" + count;
+}
+
+function createFoldButton(kind) {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "its-fold its-" + kind + "-fold";
+  button.setAttribute("aria-expanded", "true");
+  button.setAttribute("aria-label", kind === "heading" ? "Collapse section" : "Collapse list");
+  return button;
+}
+
+function applyHeadingState(button, wrapper, collapsed) {
+  wrapper.hidden = collapsed;
+  button.setAttribute("aria-expanded", String(!collapsed));
+  button.setAttribute("aria-label", collapsed ? "Expand section" : "Collapse section");
+}
+
+function applyListState(item, button, collapsed) {
+  item.classList.toggle("is-collapsed", collapsed);
+  button.setAttribute("aria-expanded", String(!collapsed));
+  button.setAttribute("aria-label", collapsed ? "Expand list" : "Collapse list");
+}
+
+function resetDecorations(pane) {
+  pane.querySelectorAll("." + MARKER_CLASS).forEach((node) => node.remove());
+  pane.querySelectorAll(".its-fold").forEach((node) => node.remove());
+
+  pane.querySelectorAll(".its-section-content").forEach((wrapper) => {
+    const parent = wrapper.parentNode;
+    if (parent === null) {
+      return;
+    }
+    while (wrapper.firstChild !== null) {
+      parent.insertBefore(wrapper.firstChild, wrapper);
+    }
+    wrapper.remove();
+  });
+
+  pane.querySelectorAll("ul.its-nested-list").forEach((node) => {
+    node.classList.remove("its-nested-list");
+  });
+  pane.querySelectorAll("li.is-collapsed").forEach((node) => {
+    node.classList.remove("is-collapsed");
+  });
+  pane.querySelectorAll(".is-branch, .is-hovered").forEach((node) => {
+    node.classList.remove("is-branch", "is-hovered");
+  });
+}
+
+function handleClick(event) {
+  if (!(event.target instanceof Element)) {
+    return;
+  }
+
+  const button = event.target.closest(".its-fold");
+  if (button === null || button.disabled) {
+    return;
+  }
+
+  event.preventDefault();
+  event.stopPropagation();
+
+  if (button.classList.contains("its-heading-fold")) {
+    const heading = button.closest("h1, h2, h3, h4, h5, h6");
+    const section = button.dataset.itsSection
+      ? document.getElementById(button.dataset.itsSection)
+      : null;
+
+    if (heading === null || section === null) {
+      return;
+    }
+
+    const collapsed = !section.hidden;
+    section.hidden = collapsed;
+    button.setAttribute("aria-expanded", String(!collapsed));
+    button.setAttribute("aria-label", collapsed ? "Expand section" : "Collapse section");
+    headingState.set(button.dataset.itsKey, collapsed);
+  } else {
+    const item = button.closest("li");
+    if (item === null) {
+      return;
+    }
+
+    const collapsed = !item.classList.contains("is-collapsed");
+    item.classList.toggle("is-collapsed", collapsed);
+    button.setAttribute("aria-expanded", String(!collapsed));
+    button.setAttribute("aria-label", collapsed ? "Expand list" : "Collapse list");
+    listState.set(button.dataset.itsKey, collapsed);
+  }
+}
+
+function handlePointerOver(event) {
+  if (!(event.target instanceof Element)) {
+    return;
+  }
+
+  if (!currentTheme.startsWith("maple")) {
+    clearBranch();
+    return;
+  }
+
+  const item = event.target.closest("li");
+  if (item === null) {
+    clearBranch();
+    return;
+  }
+  if (item === currentBranch) {
+    return;
+  }
+
+  activateBranch(item);
+}
+
+function clearBranch() {
+  currentBranch = null;
+  const pane = previewPane || findPane();
+  if (pane === null) {
+    return;
+  }
+  pane.querySelectorAll(".is-branch, .is-hovered").forEach((node) => {
+    node.classList.remove("is-branch", "is-hovered");
+  });
+}
+
+function activateBranch(item) {
+  clearBranch();
+  const pane = previewPane || findPane();
+  if (pane === null || item === null) {
+    return;
+  }
+
+  currentBranch = item;
+  item.classList.add("is-branch", "is-hovered");
+
+  let node = item.parentElement;
+  while (node !== null && node !== pane) {
+    if (node.tagName === "LI") {
+      node.classList.add("is-branch");
+    }
+    node = node.parentElement;
+  }
+}
+
+function isHeading(node) {
+  return node instanceof Element && /^H[1-6]$/.test(node.tagName);
+}
+
+function headingLevel(heading) {
+  return Number(heading.tagName.slice(1));
+}
+
+async function writeDebug(pane) {
+  try {
+    const base = getDocumentsPath();
+    if (base === undefined || typeof MarkEdit.createFile !== "function") {
+      return;
+    }
+
+    const firstList = pane.querySelector("ul");
+    const firstItem = firstList ? firstList.querySelector("li") : null;
+    const firstCheckbox = pane.querySelector(".task-list-item-checkbox");
+    const firstTaskLabel = firstCheckbox ? firstCheckbox.closest("label") : null;
+    const checkboxRect = firstCheckbox ? firstCheckbox.getBoundingClientRect() : null;
+    const labelRect = firstTaskLabel ? firstTaskLabel.getBoundingClientRect() : null;
+    const marker = firstItem ? getComputedStyle(firstItem, "::before") : null;
+    const braceItem = pane.querySelector("li");
+    const brace = braceItem ? getComputedStyle(braceItem, "::after") : null;
+    const h1 = pane.querySelector("h1");
+    const h1Style = h1 ? getComputedStyle(h1) : null;
+    const h1After = h1 ? getComputedStyle(h1, "::after") : null;
+    const listStyle = firstList ? getComputedStyle(firstList) : null;
+
+    const data = {
+      plugin: "markedit-theme-pack",
+      version: VERSION,
+      theme: currentTheme,
+      themes: THEMES.map((theme) => theme.id),
+      previewMode: pane.classList.contains("overlay") ? "preview" : "other",
+      surface: document.body.getAttribute(SURFACE_ATTR),
+      pane: {
+        position: getComputedStyle(pane).position,
+        display: getComputedStyle(pane).display,
+        inset: getComputedStyle(pane).inset,
+        background: getComputedStyle(pane).backgroundColor,
+        color: getComputedStyle(pane).color,
+        padding: getComputedStyle(pane).padding,
+        dataTheme: pane.getAttribute(THEME_ATTR),
+      },
+      headingCount: pane.querySelectorAll("h1, h2, h3, h4, h5, h6").length,
+      sectionCount: pane.querySelectorAll(".its-section-content").length,
+      listFoldCount: pane.querySelectorAll("li > .its-list-fold").length,
+      headingFoldCount: pane.querySelectorAll("h1 > .its-heading-fold, h2 > .its-heading-fold, h3 > .its-heading-fold, h4 > .its-heading-fold, h5 > .its-heading-fold, h6 > .its-heading-fold").length,
+      collapsedLists: pane.querySelectorAll("li.is-collapsed").length,
+      h1: h1Style ? {
+        fontFamily: h1Style.fontFamily,
+        color: h1Style.color,
+        borderBottom: h1Style.borderBottomWidth,
+        afterContent: h1After ? h1After.content : null,
+        afterWidth: h1After ? h1After.width : null,
+      } : null,
+      list: listStyle ? {
+        paddingLeft: listStyle.paddingLeft,
+        listStyle: listStyle.listStyleType,
+      } : null,
+      marker: marker ? {
+        width: marker.width,
+        height: marker.height,
+        background: marker.backgroundColor,
+        border: marker.borderTopWidth,
+        borderRadius: marker.borderRadius,
+        left: marker.left,
+        top: marker.top,
+      } : null,
+      brace: brace ? {
+        borderLeft: brace.borderLeftWidth,
+        borderTop: brace.borderTopWidth,
+        borderColor: brace.borderTopColor,
+        borderRadius: brace.borderRadius,
+        left: brace.left,
+        width: brace.width,
+      } : null,
+      taskCheckbox: checkboxRect && labelRect ? {
+        centerDeltaY: Math.round((checkboxRect.top + checkboxRect.height / 2 - (labelRect.top + labelRect.height / 2)) * 100) / 100,
+        top: getComputedStyle(firstCheckbox).top,
+        left: getComputedStyle(firstCheckbox).left,
+        width: getComputedStyle(firstCheckbox).width,
+        height: getComputedStyle(firstCheckbox).height,
+      } : null,
+      headingState: [...headingState.entries()],
+      listState: [...listState.entries()],
+    };
+
+    const path = base.replace(/\/$/, "") + "/debug/theme-pack-debug.json";
+    await MarkEdit.createFile({
+      path,
+      string: JSON.stringify(data, null, 2),
+      overwrites: true,
+    });
+  } catch (error) {
+    console.error("[MarkEdit Theme Pack] debug write failed", error);
+  }
+}

@@ -1426,6 +1426,10 @@ pie showData
     "Obsidianite" : 27
   </div>
 
+  <h2 id="long-table-section">长表格（表头吸顶）</h2>
+  <p>向下滚动这一节：sticky 打开时表头会一直停在预览区顶部；把 <code>settings.json</code> 里的 <code>stickyTableHeader</code> 设为 <code>false</code> 并重启 MarkEdit，表头就会跟着滚走。行数可由表格上的 <code>data-rows</code> 调整。</p>
+  <table id="long-table" data-rows="30"></table>
+
   <h3 id="quotes">引用、嵌套与折叠块</h3>
   <blockquote>
     <p>外层引用：深色主题下引用条与正文都要保持对比。</p>
@@ -1458,8 +1462,32 @@ pie showData
 
   function renderPane() {
     pane.replaceChildren(sample.content.cloneNode(true));
+    fillLongTable();
     highlightPane();
     renderMermaid();
+  }
+
+  const LONG_TABLE_TYPES = ['int64', 'varchar(256)', 'datetime', 'json', 'decimal(10,2)'];
+
+  // A 30-row table is the only honest way to check a sticky header.
+  function fillLongTable() {
+    const table = pane.querySelector('#long-table');
+    if (!table) {
+      return;
+    }
+    const rows = Number(table.dataset.rows || 30);
+    const head = ['字段', '类型', '必填', '默认值', '说明'];
+    const body = Array.from({ length: rows }, (_, index) => {
+      const n = index + 1;
+      return `<tr>`
+        + `<td><code>column_${String(n).padStart(2, '0')}</code></td>`
+        + `<td>${LONG_TABLE_TYPES[index % LONG_TABLE_TYPES.length]}</td>`
+        + `<td>${index % 3 === 0 ? '否' : '是'}</td>`
+        + `<td>${index % 4 === 0 ? 'NULL' : '0'}</td>`
+        + `<td>第 ${n} 行说明：滚动到这一行时，表头应该仍然停在预览区顶部。</td>`
+        + `</tr>`;
+    }).join('');
+    table.innerHTML = `<thead><tr>${head.map((title) => `<th>${title}</th>`).join('')}</tr></thead><tbody>${body}</tbody>`;
   }
 
   // MarkEdit-preview runs highlight.js over the rendered Markdown, so the token
