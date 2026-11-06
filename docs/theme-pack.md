@@ -74,9 +74,11 @@ cd markedit-preview-theme-pack   # 或你的本地目录名
 实现要点：
 
 - 吸顶是**行为**而不是配色，所以它挂在独立属性 `[data-theme-pack-table-sticky]` 上，规则用 `:where(thead th)` 把特异性压到只剩这个属性——每套主题自己的表头背景/文字色规则更具体，仍然生效；表头底色取 `--bgColor-muted → --color-bg-subtle → canvas`（GitHub 同款回退链，`canvas` 跟随当前深浅色），文字色不覆盖，因此**在「默认（不套用）」档位和别人的主题下也照样吸顶**。
-- `border-collapse: collapse` 的表格（Obsidianite、GitHub base）在吸顶时不会画出单元格边框，所以表头底边改用 `box-shadow: inset 0 -1px 0 …` 画一条分隔线；Maple 用这条阴影画成主题分隔线色，Obsidianite 画成 35% teal。
 - GitHub base 原本给每个 `<table>` 加了 `display: block; width: fit-content; overflow: auto`（宽表横向滚动）。这会让表格自己变成滚动容器，吸顶就失效，所以开启吸顶时改回 `display: table; width: auto; max-width: 100%; overflow: visible`。
 - **代价**：非常宽的表格不再有自己的横向滚动条，而是把页面撑宽、由预览整体横向滚动。CSS 无法同时做到「表格内横向滚动」和「表头跟随页面吸顶」（`overflow-x: auto` 必然让该轴之外的 `overflow-y` 也变成 `auto`）。需要 GitHub 原来的行为就把 `stickyTableHeader` 设为 `false`。
+- **贴顶位置要减掉 pane 的 padding-top**：WebKit 把 sticky 停在滚动容器的**内容框**上，而容器的 `padding-top` 会跟内容一起滚走，所以 `top: 0` 会让表头停在 padding 之下、上面露出一条能看见滚动内容的空隙。WKWebView 实测：padding 36 → 停在 36，25 → 停在 25，0 → 0。MarkEdit-preview 恰好让 `.markdown-body` 自己滚动（`overflow: scroll`）并且每套主题都带顶部 padding，所以插件按运行时量到的 `paddingTop` 写入 `--theme-pack-sticky-top: -36px`（harness 实测 Obsidianite -36px、ITS -25px，容器不滚时回到 0px），CSS 用 `top: var(--theme-pack-sticky-top, 0px)`。导出的 HTML 由文档滚动，所以导出时把该变量强制写成 `0px`（`MarkEditGetHtml` 会把面板的行内样式一起复制过来，不覆盖就会把表头顶出可视区）。
+- **分隔线只留一条**：表头底色必须不透明，而 `border-collapse: collapse` 下吸顶单元格不画边框，所以表头底边用 `box-shadow: inset 0 -1px 0 …` 画；同时把表头的 `border-bottom` 和首行单元格的 `border-top` 置 0（用 `!important`，因为各主题在后面又用 `border` 简写重申了一遍），否则正常显示时 inset 线和真实边框会隔 1px 变成双线。Maple 是 `border-collapse: separate`，绿色表头块本身就是边界，所以它的 `box-shadow` 关掉（否则灰线会画在绿色块内部）。
+- Obsidianite 表头底色从 7% accent 提到 **16%**（body 单元格是 `--ob-panel`，偶数行 4%），表头和正文的层次更明显；吸顶的分隔线用 50% teal。
 - Maple 表格原先靠 `overflow: hidden` 裁圆角，这同样会破坏吸顶；现在圆角由四个角上的单元格自己带（`thead th:first/last-child` 上圆角、`tbody tr:last-child td:first/last-child` 下圆角），外观不变。
 - 导出 HTML 会带上同样的属性和规则，所以在浏览器里滚动也吸顶；打印成 PDF 时 Chrome/Safari 会自己把 `thead` 重复到每一页。
 
@@ -197,7 +199,7 @@ CSS 全部限定在 `.markdown-body[data-preview-theme="..."]` 下，不会影�
 - 代码块 token 颜色按 `data-theme-pack-tone` 取值，不再按主题硬编码。背景是：MarkEdit-preview 在宿主为浅色外观时注入 GitHub 浅色 highlight.js 调色板，字符串（`#032f62`）和注释在深色预览背景上几乎不可读。深色 tone 用 GitHub Dark，Maple Dark / Obsidianite 再覆盖成各自主题色相；行内代码颜色不受影响。
 - mermaid 的配色只看宿主外观，不看主题：浅色宿主 + 深色主题会拿到淡紫底、深色文字的图，放在深色页面上接近一片黑。插件只在深色 tone 下用 `--mermaid-*` 重写 SVG 的常见元素（actor、node、cluster、edgeLabel、marker、message/loop/label 文本、lifeline、sequence number 圆圈等），文本换成更亮的主题前景色；便签改成低饱和琥珀底 + 琥珀字，不再用刺眼的纯黄块，并关闭 mermaid 的 drop-shadow 滤镜。**浅色主题一律不覆盖**，保留 mermaid 原生配色与 `classDef` 彩色节点——实测这套比按主题重画的效果更好；副作用是深色宿主 + 浅色主题时图仍是 mermaid 自己的深色版（图内自洽，只是与页面明暗不一致）。
 - Obsidianite/Brackets 的表格显式设置深色表面：表头是 7% accent 混合 `--ob-panel`，正文使用 `--ob-panel`，偶数行叠加 4% accent；表格内的行内代码用 10% accent 背景与单元格区分。这样不会让 GitHub 的浅色表格变量在深色主题里透出白底。
-- 表头吸顶开启时，表格从 GitHub base 的 `display:block; overflow:auto` 改回普通表格盒子（否则吸顶无效）。副作用是很宽的表格会撑宽页面、由页面横向滚动，而不是表格内部出现横向滚动条；不想要吸顶就把 `stickyTableHeader` 设为 `false`。
+- 表头吸顶开启时，表格从 GitHub base 的 `display:block; overflow:auto` 改回普通表格盒子（否则吸顶无效）。副作用是很宽的表格会撑宽页面、由页面横向滚动，而不是表格内部出现横向滚动条；不想要吸顶就把 `stickyTableHeader` 设为 `false`。表头贴顶位置已按面板 `padding-top` 反向补偿，表头分隔线也只保留一条（详见上一节）。
 - ITS 的标题自动折叠只属于 ITS；Maple/Obsidianite 只折叠列表，与之前的样张一致。
 - Maple 的 active 分支是 hover 行为；静态截图里的 active 行是用 demo 路径生成的。
 - Obsidianite 是深色主题，会同时设置页面 overscroll 背景；Maple 浅色/深色也会同步预览页背景。

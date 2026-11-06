@@ -77,7 +77,7 @@
  * CSS sources here. Do not hand-edit CSS in this file or in dist/.
  */
 
-const VERSION = "1.6.0";
+const VERSION = "1.6.1";
 const SETTINGS_KEY = "extension.markeditThemePack";
 const STYLE_ID = "markedit-theme-pack-style";
 const MARKER_CLASS = "theme-pack-decorated-marker";
@@ -85,6 +85,7 @@ const THEME_ATTR = "data-preview-theme";
 const TONE_ATTR = "data-theme-pack-tone";
 const MERMAID_PAINT_ATTR = "data-theme-pack-mermaid-paint";
 const STICKY_ATTR = "data-theme-pack-table-sticky";
+const STICKY_TOP_VAR = "--theme-pack-sticky-top";
 const SURFACE_ATTR = "data-theme-pack-surface";
 const STATE_FILE = ".markedit-theme-pack.json";
 const FOLD_MENU_TITLE = "折叠层级";
@@ -347,6 +348,10 @@ async function exportThemedHtml() {
     }
     if (settings.stickyTableHeader) {
       wrapper.setAttribute(STICKY_ATTR, "true");
+      // The live pane's inline style is copied along by MarkEditGetHtml, and its
+      // negative sticky offset only makes sense while the pane itself scrolls.
+      // In the exported file the document scrolls, so pin at 0.
+      wrapper.style.setProperty(STICKY_TOP_VAR, "0px");
     }
 
     const info = typeof MarkEdit.getFileInfo === "function"
@@ -644,11 +649,26 @@ function applyThemeToPane(pane) {
 // working in the "不套用" mode and under other people's themes, while our own
 // themes still win on the header colors through their more specific rules.
 function applyStickyTables(pane) {
-  if (settings.stickyTableHeader) {
-    pane.setAttribute(STICKY_ATTR, "true");
-  } else {
+  if (!settings.stickyTableHeader) {
     pane.removeAttribute(STICKY_ATTR);
+    pane.style.removeProperty(STICKY_TOP_VAR);
+    return;
   }
+  pane.setAttribute(STICKY_ATTR, "true");
+  syncStickyOffset(pane);
+}
+
+// WebKit pins a sticky cell against the scroll container's *content* box, and
+// the container's padding-top scrolls away with the content. MarkEdit-preview
+// makes the pane itself the scroller (overflow:scroll) and every theme gives it
+// a top padding, so a plain top:0 leaves a gap exactly as tall as that padding
+// (measured in WKWebView: padding 36 -> stuck 36, 25 -> 25, 0 -> 0). Offsetting
+// by the negative padding puts the header flush with the visible top.
+function syncStickyOffset(pane) {
+  const style = getComputedStyle(pane);
+  const paneScrolls = /auto|scroll/.test(style.overflowY);
+  const paddingTop = paneScrolls ? Number.parseFloat(style.paddingTop) : 0;
+  pane.style.setProperty(STICKY_TOP_VAR, (Number.isFinite(paddingTop) ? -paddingTop : 0) + "px");
 }
 
 // The palette keys on the resolved tone and on the host appearance, so flipping

@@ -455,7 +455,9 @@ const CSS = `
    still wins on colors. */
 .markdown-body[data-theme-pack-table-sticky] :where(thead th) {
   position: sticky;
-  top: 0;
+  /* Negative of the scrolling pane's padding-top, written by the plugin; 0 in
+     exported files, where the document scrolls instead of the pane. */
+  top: var(--theme-pack-sticky-top, 0px);
   z-index: 3;
   /* Same fallback chain GitHub's own stylesheet uses: canvas follows the
      current color-scheme, so a stuck header stays opaque in either appearance.
@@ -477,6 +479,19 @@ const CSS = `
   width: auto;
   max-width: 100%;
   overflow: visible;
+}
+
+/* The stuck header is drawn with the inner shadow above, so the real border
+   between the header and the first row has to go — otherwise the two sit one
+   pixel apart and the divider reads as a double line. !important is needed
+   because every theme restates the full "border" shorthand later in this file,
+   which would otherwise win over the :where() rule above. */
+.markdown-body[data-theme-pack-table-sticky] :where(thead th) {
+  border-bottom: 0 !important;
+}
+
+.markdown-body[data-theme-pack-table-sticky] :where(tbody tr:first-child > td) {
+  border-top: 0 !important;
 }
 
 /* Heading sections are foldable in every theme. Non-ITS themes keep their
@@ -1100,13 +1115,17 @@ body[data-theme-pack-surface="obsidianite-bracket"] {
   font-size: 0.94em;
 }
 
+/* Maple uses border-collapse: separate, so the solid green header block is
+   already the boundary; an extra inset line would read as a double rule. */
 .markdown-body[data-preview-theme^="maple"] th {
   padding: 10px 12px;
   background: var(--mp-accent);
   color: #fff;
   font-weight: 600;
   text-align: left;
-  box-shadow: inset 0 -1px 0 var(--mp-line);
+  /* also cancels the generic inset divider, which would draw a gray line
+     inside the green band */
+  box-shadow: none;
 }
 
 .markdown-body[data-preview-theme^="maple"] thead th:first-child { border-top-left-radius: 8px; }
@@ -1443,7 +1462,9 @@ body[data-theme-pack-surface="obsidianite-bracket"] {
 }
 
 /* Obsidianite table. Explicit dark surfaces keep GitHub's light table
-   variables from showing through (same host-bleed issue as Maple Light). */
+   variables from showing through (same host-bleed issue as Maple Light).
+   The header carries 16% accent so it separates from both the plain body cells
+   and the 4% even rows; 7% was too close to the body background. */
 .markdown-body[data-preview-theme^="obsidianite"] table {
   display: table;
   width: 100%;
@@ -1464,7 +1485,7 @@ body[data-theme-pack-surface="obsidianite-bracket"] {
 
 .markdown-body[data-preview-theme^="obsidianite"] thead tr,
 .markdown-body[data-preview-theme^="obsidianite"] th {
-  background: color-mix(in srgb, var(--ob-accent) 7%, var(--ob-panel));
+  background: color-mix(in srgb, var(--ob-accent) 16%, var(--ob-panel));
   color: var(--ob-accent);
   font-weight: 600;
 }
@@ -1472,7 +1493,7 @@ body[data-theme-pack-surface="obsidianite-bracket"] {
 /* Obsidianite keeps border-collapse: collapse, so the stuck header needs its
    own divider; the mixed background above is already opaque. */
 .markdown-body[data-preview-theme^="obsidianite"] thead th {
-  box-shadow: inset 0 -1px 0 rgba(14, 210, 247, 0.35);
+  box-shadow: inset 0 -1px 0 rgba(14, 210, 247, 0.5);
 }
 
 .markdown-body[data-preview-theme^="obsidianite"] td {
@@ -1745,7 +1766,7 @@ body[data-theme-pack-surface="obsidianite-bracket"] {
 }
 `;
 
-const VERSION = "1.6.0";
+const VERSION = "1.6.1";
 const SETTINGS_KEY = "extension.markeditThemePack";
 const STYLE_ID = "markedit-theme-pack-style";
 const MARKER_CLASS = "theme-pack-decorated-marker";
@@ -1753,6 +1774,7 @@ const THEME_ATTR = "data-preview-theme";
 const TONE_ATTR = "data-theme-pack-tone";
 const MERMAID_PAINT_ATTR = "data-theme-pack-mermaid-paint";
 const STICKY_ATTR = "data-theme-pack-table-sticky";
+const STICKY_TOP_VAR = "--theme-pack-sticky-top";
 const SURFACE_ATTR = "data-theme-pack-surface";
 const STATE_FILE = ".markedit-theme-pack.json";
 const FOLD_MENU_TITLE = "折叠层级";
@@ -2015,6 +2037,10 @@ async function exportThemedHtml() {
     }
     if (settings.stickyTableHeader) {
       wrapper.setAttribute(STICKY_ATTR, "true");
+      // The live pane's inline style is copied along by MarkEditGetHtml, and its
+      // negative sticky offset only makes sense while the pane itself scrolls.
+      // In the exported file the document scrolls, so pin at 0.
+      wrapper.style.setProperty(STICKY_TOP_VAR, "0px");
     }
 
     const info = typeof MarkEdit.getFileInfo === "function"
@@ -2312,11 +2338,26 @@ function applyThemeToPane(pane) {
 // working in the "不套用" mode and under other people's themes, while our own
 // themes still win on the header colors through their more specific rules.
 function applyStickyTables(pane) {
-  if (settings.stickyTableHeader) {
-    pane.setAttribute(STICKY_ATTR, "true");
-  } else {
+  if (!settings.stickyTableHeader) {
     pane.removeAttribute(STICKY_ATTR);
+    pane.style.removeProperty(STICKY_TOP_VAR);
+    return;
   }
+  pane.setAttribute(STICKY_ATTR, "true");
+  syncStickyOffset(pane);
+}
+
+// WebKit pins a sticky cell against the scroll container's *content* box, and
+// the container's padding-top scrolls away with the content. MarkEdit-preview
+// makes the pane itself the scroller (overflow:scroll) and every theme gives it
+// a top padding, so a plain top:0 leaves a gap exactly as tall as that padding
+// (measured in WKWebView: padding 36 -> stuck 36, 25 -> 25, 0 -> 0). Offsetting
+// by the negative padding puts the header flush with the visible top.
+function syncStickyOffset(pane) {
+  const style = getComputedStyle(pane);
+  const paneScrolls = /auto|scroll/.test(style.overflowY);
+  const paddingTop = paneScrolls ? Number.parseFloat(style.paddingTop) : 0;
+  pane.style.setProperty(STICKY_TOP_VAR, (Number.isFinite(paddingTop) ? -paddingTop : 0) + "px");
 }
 
 // The palette keys on the resolved tone and on the host appearance, so flipping
